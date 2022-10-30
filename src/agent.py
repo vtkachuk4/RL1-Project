@@ -3,10 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import numpy as np
-
+from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions):
+    def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA):
         super(DQNetwork, self).__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -14,15 +14,16 @@ class DQNetwork(nn.Module):
         self.n_actions = n_actions
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-        self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+        self.fc3 = nn.Linear(self.fc2_dims * activation.expansion_factor, self.n_actions) # need to increase layer size by number of bins
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
+        self.activation = activation
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
         self.to(self.device)  # part of why we derive straight from the nn class
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
+        x = self.activation(self.fc2(x)) # FTA(x*W2 + b2)
         actions = self.fc3(
             x
         )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
@@ -38,6 +39,7 @@ class Agent:
         input_dims,
         batch_size,
         n_actions,
+        activation,
         max_mem_size=100000,
         eps_end=0.01,
         eps_dec=5e-5,
@@ -53,6 +55,7 @@ class Agent:
         self.mem_cntr = 0
         self.eps_end = eps_end
         self.eps_dec = eps_dec
+        self.activation = activation
         T.manual_seed(seed)
         self.Q_eval = DQNetwork(
             self.lr,
@@ -60,6 +63,7 @@ class Agent:
             input_dims=input_dims,
             fc1_dims=256,
             fc2_dims=256,
+            activation = activation
         )
         # Replay memory arrays; TODO - can switch to trad. replay buffer as in pytorch tutorial
         self.state_memory = np.zeros(
@@ -126,42 +130,4 @@ class Agent:
 
         self.epsilon = (
             self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end
-        )
-
-
-if __name__ == "__main__":
-    env = gym.make("LunarLander-v2")
-    agent = Agent(
-        gamma=0.99,
-        epsilon=1.0,
-        batch_size=64,
-        n_actions=4,
-        eps_end=0.01,
-        input_dims=[8],
-        lr=0.0003,
-        seed=1,
-    )
-    scores, eps_history = [], []
-    n_games = 500
-    for i in range(n_games):
-        score = 0
-        done = False
-        observation = env.reset()
-        observation = np.array(observation[0])
-        while not done:
-            action = agent.choose_action(observation)
-            observation_, reward, done, truncated, info = env.step(action)
-            score += reward
-            agent.store_transition(observation, action, reward, observation_, done)
-            agent.learn()
-            observation = observation_
-        scores.append(score)
-        eps_history.append(agent.epsilon)
-        avg_score = np.mean(scores[-100:])
-        print(
-            "episode ",
-            i,
-            "score %.2f" % score,
-            "average score %.2f" % avg_score,
-            "epsilon %.2f" % agent.epsilon,
         )

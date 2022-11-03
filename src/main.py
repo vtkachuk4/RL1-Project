@@ -91,6 +91,7 @@ if __name__ == "__main__":
         "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2],
         "num_tiles": [10, 11, 12, 13, 14, 15]
     }
+    num_runs = 5
 
     for _fta_upper_limit in fta_params_dict["fta_upper_limit"]:
         _fta_lower_limit = -1*_fta_upper_limit
@@ -98,7 +99,7 @@ if __name__ == "__main__":
             _fta_delta = (2*_fta_upper_limit)/num_tiles
             _fta_eta = _fta_delta
             
-            for run_i in range(5):
+            for run_i in range(num_runs):
                 print(
                 "fta_upper_limit: %.2f  " % _fta_upper_limit,
                 "fta_lower_limit: %.2f  " % _fta_lower_limit,
@@ -107,7 +108,4 @@ if __name__ == "__main__":
                 "run: ", run_i
                 )
                 main(run_i, _fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta)
-                # break
-            # break
-        # break
      

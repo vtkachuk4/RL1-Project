@@ -5,6 +5,7 @@ import torch.optim as optim
 import numpy as np
 from FTA import FTA
 
+
 class DQNetwork(nn.Module):
     def __init__(self, lr, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA):
         super(DQNetwork, self).__init__()
@@ -14,7 +15,12 @@ class DQNetwork(nn.Module):
         self.n_actions = n_actions
         self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-        self.fc3 = nn.Linear(self.fc2_dims * activation.expansion_factor, self.n_actions) # need to increase layer size by number of bins
+        if type(activation).__name__ == "FTA":
+            self.fc3 = nn.Linear(
+                self.fc2_dims * activation.expansion_factor, self.n_actions
+            )  # need to increase layer size by number of bins
+        else:
+            self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.loss = nn.MSELoss()
         self.activation = activation
@@ -23,7 +29,7 @@ class DQNetwork(nn.Module):
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-        x = self.activation(self.fc2(x)) # FTA(x*W2 + b2)
+        x = self.activation(self.fc2(x))  # FTA(x*W2 + b2)
         actions = self.fc3(
             x
         )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
@@ -63,7 +69,7 @@ class Agent:
             input_dims=input_dims,
             fc1_dims=256,
             fc2_dims=256,
-            activation = activation
+            activation=activation,
         )
         # Replay memory arrays; TODO - can switch to trad. replay buffer as in pytorch tutorial
         self.state_memory = np.zeros(

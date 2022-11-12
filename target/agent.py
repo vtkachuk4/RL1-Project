@@ -5,10 +5,10 @@ import torch.optim as optim
 import numpy as np
 import random
 from collections import namedtuple, deque
-
+from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -16,13 +16,21 @@ class DQNetwork(nn.Module):
         self.n_actions = n_actions
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-        self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
-
+        if type(activation).__name__ == "FTA":
+            self.fc3 = nn.Linear(
+                self.fc2_dims * activation.expansion_factor, self.n_actions
+            )  # need to increase layer size by number of bins
+        else:
+            self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+        
+        self.activation = activation
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-        x = F.relu(self.fc2(x))
-        actions = self.fc3(x)
+        x = self.activation(self.fc2(x))  # FTA(x*W2 + b2)
+        actions = self.fc3(
+            x
+        )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
         return actions
 
 
@@ -51,6 +59,7 @@ class Agent:
         input_dims,
         batch_size,
         n_actions,
+        activation,
         max_mem_size=100000,
         eps_end=0.01,
         eps_dec=5e-5,
@@ -67,12 +76,13 @@ class Agent:
         self.mem_cntr = 0
         self.eps_end = eps_end
         self.eps_dec = eps_dec
+        self.activation = activation
 
         T.manual_seed(seed)
 
         self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
-        self.QNetwork = DQNetwork(input_dims, 256, 256, n_actions).to(self.device)
-        self.targetNetwork = DQNetwork(input_dims, 256, 256, n_actions).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
+        self.targetNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
         self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
         self.targetNetwork.eval()
 
@@ -128,8 +138,8 @@ class Agent:
 
         self.optimizer.zero_grad()
         loss.backward()
-        for param in self.QNetwork.parameters():
-            param.grad.data.clamp_(-1, 1)
+        # for param in self.QNetwork.parameters():
+        #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
 
         self.epsilon = (

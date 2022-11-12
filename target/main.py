@@ -33,7 +33,8 @@ def evaluation(agent, seed=1):
         if done or truncated:
             return score
 
-def main(activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, _fta_delta = 2, _fta_eta = 2, run_i=0):
+def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, 
+        _fta_delta = 2, _fta_eta = 2, _device="cuda"):
     env = gym.make("LunarLander-v2")
 
     # Activation params
@@ -60,6 +61,7 @@ def main(activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, _fta
         batch_size=_batch_size,
         n_actions=_n_actions,
         activation=_activation,
+        device=_device,
         eps_end=_eps_end,
         input_dims=_input_dims,
         lr=_lr,
@@ -109,8 +111,8 @@ def main(activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, _fta
                 if total_timesteps % 1000 == 0:
                     agent.targetNetwork.load_state_dict(agent.QNetwork.state_dict())
                     policy_score = evaluation(agent)
-                    if policy_score > 200:
-                        T.save(agent.QNetwork.state_dict(), f"model{policy_score:.2f}.pth")
+                    # if policy_score > 200:
+                    #     T.save(agent.QNetwork.state_dict(), f"model{policy_score:.2f}.pth")
                     # print(f"greedy evaluation: {policy_score:.2f}")
                     policy_scores.append((policy_score, total_timesteps))
 

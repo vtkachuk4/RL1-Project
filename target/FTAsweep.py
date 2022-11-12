@@ -1,10 +1,14 @@
+import multiprocessing
+from functools import partial
 from main import main
 
 if __name__ == "__main__":
+    device = "cuda:0"
     activation = 'fta'
     fta_params_dict = {
-        "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "num_tiles": [14, 16, 18, 20, 21, 22]
+        # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
+        "fta_upper_limit": [0.5],
+        "num_tiles": [12, 14, 16, 18, 20]
     }
     num_runs = 10
 
@@ -14,15 +18,26 @@ if __name__ == "__main__":
             _fta_delta = (2*_fta_upper_limit)/num_tiles
             _fta_eta = _fta_delta
             
-            for run_i in range(num_runs):
-                print(
+            print(
                 "fta_upper_limit: %.2f  " % _fta_upper_limit,
                 "fta_lower_limit: %.2f  " % _fta_lower_limit,
                 "fta_delta: %.4f  " % _fta_delta,
                 "fta_eta: %.4f  " % _fta_eta,
-                "run: ", run_i
+                # "run: ", run_i
                 )
-                main(activation, _fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta, run_i)
-                break
-            break
-        break
+
+            runs = [i for i in range(num_runs)]
+            main_i = partial(main, activation = activation, 
+                                    _fta_lower_limit = _fta_lower_limit, 
+                                    _fta_upper_limit = _fta_upper_limit, 
+                                    _fta_delta = _fta_delta, 
+                                    _fta_eta = _fta_eta,
+                                    _device = device)
+            
+            pool = multiprocessing.Pool(processes=num_runs)
+            pool.map(main_i, runs)
+
+            #     main(activation, _fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta, run_i, device)
+        #         break
+        #     break
+        # break

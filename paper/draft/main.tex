@@ -1,0 +1,160 @@
+\documentclass{article}
+
+
+% if you need to pass options to natbib, use, e.g.:
+%     \PassOptionsToPackage{numbers, compress}{natbib}
+% before loading neurips_2022
+
+
+% ready for submission
+% \usepackage{neurips_2022}
+
+
+% to compile a preprint version, e.g., for submission to arXiv, add add the
+% [preprint] option:
+%     \usepackage[preprint]{neurips_2022}
+
+
+% to compile a camera-ready version, add the [final] option, e.g.:
+    \usepackage[final]{neurips_2022}
+
+
+% to avoid loading the natbib package, add option nonatbib:
+%    \usepackage[nonatbib]{neurips_2022}
+
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% things we added
+
+\bibliographystyle{abbrvnat}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\title{Revisiting the Fuzzy Tilling Activation and How to Set its Hyperparameters}
+
+
+% The \author macro works with any number of authors. There are two commands
+% used to separate the names and addresses of multiple authors: \And and \AND.
+%
+% Using \And between authors leaves it to LaTeX to determine where to break the
+% lines. Using \AND forces a line break at that point. So, if LaTeX puts 3 of 4
+% authors names on the first line, and the last on the second line, try using
+% \AND instead of \And before the third author name.
+
+
+\author{%
+  Muhammad Gohar Javed \\
+  Department of Electrical and Computer Engineering \\
+  University of Alberta\\
+  % Pittsburgh, PA 15213 \\
+  \texttt{javed4@ualberta.ca} \\
+  % examples of more authors
+  \And
+  Tian Xiang Du \\
+  Department of Computer Science\\
+  University of Alberta\\
+  \texttt{tdu@ualberta.ca} \\
+  \AND
+  Amir Bahmani \\
+  Department of Computer Science\\
+  University of Alberta\\
+  \texttt{bahmani1@ualberta.ca} \\
+  \And
+  Vlad Tkachuk \\
+  Department of Computer Science\\
+  University of Alberta\\
+  \texttt{vtkachuk@ualberta.ca} \\
+  % \And
+  % Coauthor \\
+  % Affiliation \\
+  % Address \\
+  % \texttt{email} \\
+}
+
+
+\begin{document}
+
+
+\maketitle
+
+
+\begin{abstract}
+  Sparsity has been shown to improve model performance on decision making problems with non-stationary data, such as online supervised learning and reinforcement learning (RL).
+  Sparsity is when a large number of weights in a neural network are approximately zero.
+  The fuzzy tiling activation (FTA) has been proposed to enforce sparsity by design, and has been shown to outperform other activations, such as ReLU and Tanh, that do not enforce sparsity.
+  However, a difficulty of using the FTA is that it is sensitive to a new \textit{tiling bound} hyperparameter, which currently requires a search to be set effectively.
+  In this work we do two things. 
+  First, we reproduce experiments comparing FTA to ReLU using deep Q-learning (DQN) on the LunarLander RL environment, showing that indeed, for this environment FTA is no better than ReLU if the tiling bound is not set appropriately,
+  Second, we empirically test if a simple technique of normalizing the activation values passed into the FTA cell can remove the need for setting the tiling bound.
+
+
+\end{abstract}
+
+
+\section{Introduction} \label{sec:intro}
+Basically rephrase the abstract in a bit more detail...
+
+Briefly explain how FTA works by partitioning activation into bins and how you have to pick number of bins and tiling bound. 
+Then explain the intuitive issue that arises if the tiling bound is too large (i.e. all the activation values are in the same bin, since none of them are large enough to even enter the second bin). 
+This explanation will help the reader understand why we are investigating the questions listed below and what the logic is behind them.
+
+In this work we aim to do two things:
+\begin{enumerate}
+  \item We aim to reproduce the FTA vs ReLU using DQN \cite[]{mnih2013playing} in LunarLander experiment presented in \cite[]{pan2019fuzzy}.
+  \item We aim to test if the simple technique of normalizing the input values (using $\tanh$) to FTA can remove the need for tuning the tiling bound parameter in FTA
+\end{enumerate}
+
+Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}. 
+
+To answer the question in the second point we normalize the values passed into FTA by passing them into a $\tanh$ first.
+This method was discussed in \cite{pan2019fuzzy}, but not tested.
+\cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients, which we hope to confirm from this experiment.
+We hypothesis that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that then values passed into FTA are in $[-1, 1]$, thus the tiling bound can always be set to $[-1, 1]$.
+Experiments related to the second point are shown in section \ref{sub-sec:normalize experiments}. 
+
+
+\section{Background} \label{sec:background}
+Some background about sparsity and how it is useful in RL. 
+Mention FTA paper here of course and maybe find any new papers that use FTA as well?
+
+
+\section{Preliminaries} \label{sec:prelims}
+Formally introduce the FTA cell and all the terms/notation needed for it. 
+Basically just use the same story/notation (just much briefer) as Section 3.1 in \cite[]{pan2019fuzzy}.
+
+
+\section{Experiments} \label{sec:experiments}
+Explain the environment we test on. 
+How the LunarLander env works (i.e. state, action space, and reward structure)
+
+\subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
+Explain the network structure and how we change only final layer with FTA and ReLU.
+Then explain what hyper-parameter sweeps we did and add the plot showing them (should discuss patterns we saw here for FTA hyper-params and how they confirm those discussed in \cite[]{pan2019fuzzy}).
+Show the plot of FTA vs ReLU using the same hyper-params as in \cite[]{pan2019fuzzy} and discuss how we see basically same results as them hopefully.
+
+\subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
+Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).
+I think we can leave this as TODO for final report.
+
+
+\section{Discussion} \label{sec:discussion}
+Discuss how the reproducibility experiment basically matches the results in \cite[]{pan2019fuzzy} paper
+Discuss what we find from normalizing activations (i.e. if it worked or not, and if not any hypothesis why might have as to why)
+
+
+% \section*{References}
+\newpage
+\bibliography{references}
+
+\end{document}

@@ -60,6 +60,7 @@ class Agent:
         batch_size,
         n_actions,
         activation,
+        device,
         max_mem_size=100000,
         eps_end=0.01,
         eps_dec=5e-5,
@@ -80,7 +81,8 @@ class Agent:
 
         T.manual_seed(seed)
 
-        self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
+        self.device = T.device(device)
         self.QNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
         self.targetNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
         self.targetNetwork.load_state_dict(self.QNetwork.state_dict())

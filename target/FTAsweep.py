@@ -3,15 +3,16 @@ from functools import partial
 from main import main
 
 if __name__ == "__main__":
-    device = "cuda:0"
+    device = "cuda:2"
     activation = 'fta'
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [0.5],
-        "num_tiles": [12, 14, 16, 18, 20]
+        "fta_upper_limit": [1,4],
+        "num_tiles": [18, 20]
     }
     num_runs = 10
-
+    pool = multiprocessing.Pool(processes=num_runs)
+    
     for _fta_upper_limit in fta_params_dict["fta_upper_limit"]:
         _fta_lower_limit = -1*_fta_upper_limit
         for num_tiles in fta_params_dict["num_tiles"]:
@@ -34,7 +35,7 @@ if __name__ == "__main__":
                                     _fta_eta = _fta_eta,
                                     _device = device)
             
-            pool = multiprocessing.Pool(processes=num_runs)
+            
             pool.map(main_i, runs)
 
             #     main(activation, _fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta, run_i, device)

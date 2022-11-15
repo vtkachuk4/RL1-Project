@@ -18,23 +18,23 @@ def create_checkpoint():
 def evaluation(agent, seed=1):
     env = gym.make("LunarLander-v2")
     observation = env.reset()
-    state = T.tensor([observation[0]], device=agent.device)
+    state = T.tensor(np.asarray([observation[0]]), device=agent.device)
     score = 0
 
     for step in count():
         action = agent.choose_action(state, greedy=True)
         next_state, reward, done, truncated, _ = env.step(action.item())
         score += reward
-        reward = T.tensor([reward], device=agent.device, dtype=T.float32)
-        next_state = T.tensor([next_state], device=agent.device)
+        reward = T.tensor(np.asarray([reward]), device=agent.device, dtype=T.float32)
+        next_state = T.tensor(np.asarray([next_state]), device=agent.device)
         state = next_state
 
 
         if done or truncated:
             return score
 
-def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, 
-        _fta_delta = 2, _fta_eta = 2, _device="cuda"):
+def main(run_i=0, _use_target = True, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit = 20, 
+        _fta_delta = 2, _fta_eta = 2, _device="cuda:0"):
     env = gym.make("LunarLander-v2")
 
     # Activation params
@@ -48,12 +48,12 @@ def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit =
 
     # Agent init
     _gamma = 0.99
-    _epsilon = 1.0
-    _batch_size = 256
+    _epsilon = 0.1
+    _batch_size = 64
     _n_actions = 4
     _eps_end = 0.01
     _input_dims = 8
-    _lr = 0.0003
+    _lr = 0.0001
     _seed = run_i*10
     agent = Agent(
         gamma=_gamma,
@@ -62,6 +62,7 @@ def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit =
         n_actions=_n_actions,
         activation=_activation,
         device=_device,
+	use_target = _use_target,
         eps_end=_eps_end,
         input_dims=_input_dims,
         lr=_lr,
@@ -69,7 +70,11 @@ def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit =
     )
 
     # data collection and initialization
-    output_name = f"data/{activation}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" # run from root folder!
+    # run from root folder!
+    if activation == "fta":
+        output_name = f"data/{activation}_t{_use_target}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
+    else:
+        output_name = f"data/{activation}_t{_use_target}_l{_lr}_{run_i}.csv"
     with open(output_name, 'w+', newline = '') as csvfile:
         logger = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
         logger.writerow(["fta params:","lower","upper","delta","eta"])
@@ -88,17 +93,17 @@ def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit =
 
         score = 0
         observation = env.reset()
-        state = T.tensor([observation[0]], device=agent.device)
+        state = T.tensor(np.asarray([observation[0]]), device=agent.device)
         for step in count():
             total_timesteps += 1
 
             action = agent.choose_action(state)
             next_state, reward, done, truncated, _ = env.step(action.item())
             score += reward
-            reward = T.tensor([reward], device=agent.device, dtype=T.float32)
+            reward = T.tensor(np.asarray([reward]), device=agent.device, dtype=T.float32)
 
             if not done:
-                next_state = T.tensor([next_state], device=agent.device)
+                next_state = T.tensor(np.asarray([next_state]), device=agent.device)
             else:
                 next_state = None
             
@@ -109,7 +114,8 @@ def main(run_i=0, activation = "fta", _fta_lower_limit = -20, _fta_upper_limit =
                 agent.learn()
 
                 if total_timesteps % 1000 == 0:
-                    agent.targetNetwork.load_state_dict(agent.QNetwork.state_dict())
+                    if agent.use_target:
+                        agent.targetNetwork.load_state_dict(agent.QNetwork.state_dict())
                     policy_score = evaluation(agent)
                     # if policy_score > 200:
                     #     T.save(agent.QNetwork.state_dict(), f"model{policy_score:.2f}.pth")

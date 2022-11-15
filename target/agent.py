@@ -14,6 +14,7 @@ class DQNetwork(nn.Module):
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
+
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         if type(activation).__name__ == "FTA":
@@ -22,7 +23,15 @@ class DQNetwork(nn.Module):
             )  # need to increase layer size by number of bins
         else:
             self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
-        
+
+        with T.no_grad():
+            nn.init.xavier_uniform_(self.fc1.weight)
+            nn.init.zeros_(self.fc1.bias)
+            nn.init.xavier_uniform_(self.fc2.weight)
+            nn.init.zeros_(self.fc2.bias)
+            nn.init.uniform_(self.fc3.weight, a=-0.003, b=0.003)
+            nn.init.zeros_(self.fc3.bias)        
+
         self.activation = activation
 
     def forward(self, state):
@@ -61,6 +70,7 @@ class Agent:
         n_actions,
         activation,
         device,
+	use_target,
         max_mem_size=100000,
         eps_end=0.01,
         eps_dec=5e-5,
@@ -83,17 +93,19 @@ class Agent:
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
-        self.targetNetwork = DQNetwork(input_dims, 256, 256, n_actions, activation).to(self.device)
-        self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
-        self.targetNetwork.eval()
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+        self.use_target = use_target
+        if self.use_target:
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+            self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
+            self.targetNetwork.eval()
 
         self.optimizer = optim.Adam(self.QNetwork.parameters(), lr=self.lr)
         self.memory = ReplayMemory(self.mem_size)
 
 
     def choose_action(self, state, greedy=False):
-        epsilon = 0 if greedy else self.epsilon
+        epsilon = 0.05 if greedy else self.epsilon
         if np.random.random() >= epsilon:
             with T.no_grad():
                 return self.QNetwork(state).max(1)[1].view(1, 1)
@@ -129,8 +141,11 @@ class Agent:
         # This is merged based on the mask, such that we'll have either the expected
         # state value or 0 in case the state was final.
         next_state_values = T.zeros(self.batch_size, device=self.device)
-        next_state_values[non_final_mask] = self.targetNetwork(non_final_next_states).max(1)[0].detach()
-        # Compute the expected Q values
+        if self.use_target:
+            next_state_values[non_final_mask] = self.targetNetwork(non_final_next_states).max(1)[0].detach()
+        else:
+            next_state_values[non_final_mask] = self.QNetwork(non_final_next_states).max(1)[0].detach()       
+	# Compute the expected Q values
         expected_state_action_values = (next_state_values * self.gamma) + reward_batch
 
 
@@ -143,7 +158,5 @@ class Agent:
         # for param in self.QNetwork.parameters():
         #     param.grad.data.clamp_(-1, 1)
         self.optimizer.step()
-
-        self.epsilon = (
-            self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end
-        )
+	
+        self.epsilon = (self.epsilon - self.eps_dec if self.epsilon > self.eps_end else self.eps_end)

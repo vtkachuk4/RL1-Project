@@ -3,13 +3,16 @@ from functools import partial
 from main import main
 
 if __name__ == "__main__":
-    device = "cuda:2"
+    device = "cuda:1"
     activation = 'fta'
+    use_target = True
+
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [1,4],
-        "num_tiles": [18, 20]
+        "fta_upper_limit": [20],
+        "num_tiles": [20]
     }
+
     num_runs = 10
     pool = multiprocessing.Pool(processes=num_runs)
     
@@ -28,7 +31,8 @@ if __name__ == "__main__":
                 )
 
             runs = [i for i in range(num_runs)]
-            main_i = partial(main, activation = activation, 
+            main_i = partial(main, _use_target = use_target,
+                                    activation = activation, 
                                     _fta_lower_limit = _fta_lower_limit, 
                                     _fta_upper_limit = _fta_upper_limit, 
                                     _fta_delta = _fta_delta, 

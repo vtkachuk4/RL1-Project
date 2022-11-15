@@ -112,22 +112,46 @@
 
 
 \section{Introduction} \label{sec:intro}
-Basically rephrase the abstract in a bit more detail...
+Neural networks (NN) have been shown to perform well on several challenging problems \cite{mnih2013playing,silver2017mastering} 
+Part of the reason for their success is due to their ability to learn good representations of the input data, which can then be used to effectively generalize.
+A representation of an input is defined as the values of all the neurons of the NN when the input is passed into the NN.
+The values of all the neurons are commonly called \textit{features}.  
+Unfortunately, when the NN is trained online (data recieved sequentially), interference can occur between the representations that are learned CITE.
+Interference is loosly defined as when a new learned representation affects the performance of the NN on previously seen data in a negative way (i.e. the old representation becomes worse due to the newly learned one).
+A potentially useful intuition for when interference can occur is when the representation for some input $x_1$ is dense (a large number of features are non-zero), 
+since then, if another input $x_2$ is sufficiently different (uncorolated) from $x_1$, its representation should likely be quite different.
+However, in order for a different representation to be learned for $x_1$ the NN will likely have to update the weights that contribute to the representation of $x_1$, 
+thus likely making the representation for $x_1$ worse in order to learn a good representation for $x_2$.
 
-Briefly explain how FTA works by partitioning activation into bins and how you have to pick number of bins and tiling bound. 
-Then explain the intuitive issue that arises if the tiling bound is too large (i.e. all the activation values are in the same bin, since none of them are large enough to even enter the second bin). 
-This explanation will help the reader understand why we are investigating the questions listed below and what the logic is behind them.
+A method that has been found to reduce interference, is to enforce sparse representations (a large number of features are zero) CITE.
+Revisiting the example above with inputs $x_1, x_2$, if the representation for $x_1$ is sparse, then the representation that is learned for $x_2$ can use weights that are unused for the representation of $x_1$, 
+thus causing no interference between thkkke features for $x_1$ and $x_2$.
+The best way to enforce sparsity is an active topic of research 
+A discussion of related works can be found in Section \ref{sec:background}.
 
-In this work we aim to do two things:
+One way to enforce sparsity is by design, a method which does this is using a \textit{fuzzy tiling activation} (FTA) \cite[]{pan2019fuzzy}.
+FTA is an activation function that can be used at each layer of a network, similar to ReLU or Tanh.
+Different from ReLU and Tanh is that FTA has a vector output instead of a scalar output.
+FTA takes as input a scalar and outputs a one-hot vector.
+The output of FTA can be thought of as mapping a scalar $z \in \RR$ to one of $k$ evenly spaced bins in $\RR^k$.
+A critical step to using FTA effectively is setting the tiling bound parameter $u$.
+This is because $z$ should be in $[-u, u]$ to work well. 
+However, just satisfying this is usually not enough for good performance (as one could easily set $u$ very large).
+For instance if $u = 10$ and $k = 4$ then the bins would be $[-10, -5), [-5, 0), [0, 5), [5, 10]$ 
+and if $z$ is really takes values in $[0,1]$ then it will always map to the same bin (bin $3$ since $[0, 1] \subset [0, 5))$.
+Thus, as discussed by \cite[]{pan2019fuzzy}, setting the tiling bound is important; however, no good solution exists for setting it other than performing a search.
+The sensitivity to the tiling bound was especially prominant in the work of \cite[]{pan2019fuzzy} when using FTA in deep Q-network (DQN) \cite[]{mnih2013playing} in the LunarLander RL environment.
+
+As such, in this work we aim to do two things:
 \begin{enumerate}
-  \item We aim to reproduce the FTA vs ReLU using DQN \cite[]{mnih2013playing} in LunarLander experiment presented in \cite[]{pan2019fuzzy}.
-  \item We aim to test if the simple technique of normalizing the input values (using $\tanh$) to FTA can remove the need for tuning the tiling bound parameter in FTA
+  \item We aim to reproduce the FTA vs ReLU using DQN in LunarLander experiments presented in \cite[]{pan2019fuzzy}, to confirm that indeed FTA is sensitive to the tiling bound in this setting.
+  \item Next, we aim to test if the simple technique of normalizing the values (using $\tanh$, or batch norm) passed to FTA can remove the need for tuning the tiling bound parameter in FTA.
 \end{enumerate}
 
 Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}. 
 
-To answer the question in the second point we normalize the values passed into FTA by passing them into a $\tanh$ first.
-This method was discussed in \cite{pan2019fuzzy}, but not tested.
+To answer the question in the second point we normalize the values passed into FTA using two methods: passing them into a $\tanh$, using batch norm.
+The method of using $tanh$ to normalize the input values was discussed in \cite{pan2019fuzzy}, but not tested.
 \cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients, which we hope to confirm from this experiment.
 We hypothesis that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that then values passed into FTA are in $[-1, 1]$, thus the tiling bound can always be set to $[-1, 1]$.
 Experiments related to the second point are shown in section \ref{sub-sec:normalize experiments}. 
@@ -139,7 +163,7 @@ Mention FTA paper here of course and maybe find any new papers that use FTA as w
 
 
 \section{Preliminaries} \label{sec:prelims}
-In this section we introduce the Fuzzy Tiling Activation (FTA) and formally define the episodic RL setting.
+In this section we introduce the Fuzzy Tiling Activation (FTA) and formally define the RL setting.
 
 \subsection{Fuzzy Tiling Activation}
 First we introduce the simpler \textit{tiling activation} (TA) and then extend it to the FTA.
@@ -178,7 +202,7 @@ At each time step $t \in 1, 2 \cdots$ the agent observes a state $s_t \in \cS$.
 The agent takes an action according to its policy $a_t \sim \pi(s_t)$.
 The agent then transits to its next state according to $s_{t+1} \sim \PP(s, a)$, and recieves a reward $R(s_t, a_t, s_{t+1})$.
 
-An action value function under policy $pi$ is defined as 
+An action value function under policy $\pi$ is defined as 
 $$Q_\pi(s, a) = \mathbf{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
 where $G_t = \sum_{t=0}^\infty \gamma^t R(s_t, a_t, s_{t+1})$ is the return.
 The goal of the agent is maximize its expected reward from each state in $\cS$.

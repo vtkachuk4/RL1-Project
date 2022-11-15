@@ -36,6 +36,15 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % things we added
 
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{amsthm}
+\usepackage{bbm}
+\newcommand{\RR}{\mathbb{R}}
+\newcommand{\PP}{\mathbb{P}}
+\newcommand{\cS}{\mathcal{S}}
+\newcommand{\cA}{\mathcal{A}}
+\newcommand{\cM}{\mathcal{M}}
 \bibliographystyle{abbrvnat}
 
 
@@ -130,13 +139,55 @@ Mention FTA paper here of course and maybe find any new papers that use FTA as w
 
 
 \section{Preliminaries} \label{sec:prelims}
-Formally introduce the FTA cell and all the terms/notation needed for it. 
-Basically just use the same story/notation (just much briefer) as Section 3.1 in \cite[]{pan2019fuzzy}.
+In this section we introduce the Fuzzy Tiling Activation (FTA) and formally define the episodic RL setting.
+
+\subsection{Fuzzy Tiling Activation}
+First we introduce the simpler \textit{tiling activation} (TA) and then extend it to the FTA.
+A TA is a function $\phi: \RR \to \RR^k$, which expects inputs $z \in [-u, u]$ and maps them to one-hot vectors (standard basis) in $\RR^k$.
+For example, if $u=10$ and $k=4$, then any $z \in [-10,-5)$ would be mapped to $(1, 0 ,0, 0) \in \RR^k$, any $z \in [-5, 0)$ would be mapped to $(0, 1, 0, 0)$, any $z \in [0, 5)$ would be mapped to $(0, 0, 1, 0)$, and any $z \in [5, 10]$ would be mapped to $(0, 0, 0, 1)$.
+\cite{pan2019fuzzy} show that the TA can implemented efficientely as follows.
+Assume you want evenly spaced bins of size $\delta > 0$, and $k = 2 u/ \delta$, where WLOG $u$ was chosen such that it is divisable by $\delta$. 
+Define the tiling vector 
+$$\mathbf{c} = (-u, -u + \delta, l + 2 \delta, \dots, u - 2 \delta, u - \delta) \in \RR^k$$
+Then the TA can be defined as
+$$\phi(z) = \mathbbm{1} - I_+(\max(\mathbf{c} - z\mathbbm{1}, 0) + \max((z -\delta)\mathbbm{1} - \mathbf{c}, 0))$$
+where $\mathbbm{1} \in \RR^k$, and $I_+(\cdot)$ is an indicator function which returns 1 if the input is positive and zero otherwise, and is applied element wise to vectors.
+
+An issue with the TA is that it has zero derivative almost everywhere.
+In order to solve this issue \cite{pan2019fuzzy} proposed modifying the TA for a fuzzy tiling activation (FTA).
+The FTA can be implemented as follows.
+Define a fuzzy version of the indicator function as 
+$$I_{\eta, +} = I_+(\eta -x)x + I_+(x - \eta)$$
+where $\eta \ge 0$.
+Then the FTA can be defined as
+$$\phi_\eta(z) = \mathbbm{1} - I_{\eta, +} (\max(\mathbf{c} - z \mathbbm{1}) + \max((z-\delta)\mathbbm{1} - \mathbf{c}, 0)).$$
+where $I_{\eta, +}$ is applied element wise to vectors
+The reason for the use of fuzzy in the name of FTA can be understood from the definition of $I_{\eta, +}$.
+The term $I_+(\eta -x)$ is $1$ when $x < \eta$, while when $x > \eta$, $I_+(x - \eta)$ is $1$.
+Thus, when $x < \eta$ we have that $I_{\eta ,+}$ evaluates to $x$, giving smoother (fuzzy) indicator function.
+Notice, that this means for $x < \eta$ the derivative is non-zero, allowing us to use backpropagation to train out networks.
+Also, when $\eta = 0$ the original indicator function $I_+$ can be recovered.
+
+\subsection{Reinforcement Learning}
+The reinforcement learning (RL) setting can be formulated as an markov decision process (MDP).
+Formally an MDP is characterized by the tuple $(\cS, \cA, \PP, R, \gamma)$, where $\cS$ is that state space, $cA$ is the action space,
+$\PP$ is the transition probability kernel, $R: \cS \times \cA \cS \to \RR$ is the reward function, and $\gamma \in [0, 1]$ is the discount factor.
+A policy $\pi: \cS \to \cM_1$ is a map from states to distributions over actions, where $\cM_1$ is the set of all probability measures over actions $\cA$.
+Then, an agent (policy) interacts with an MDP as follows.
+At each time step $t \in 1, 2 \cdots$ the agent observes a state $s_t \in \cS$.
+The agent takes an action according to its policy $a_t \sim \pi(s_t)$.
+The agent then transits to its next state according to $s_{t+1} \sim \PP(s, a)$, and recieves a reward $R(s_t, a_t, s_{t+1})$.
+
+An action value function under policy $pi$ is defined as 
+$$Q_\pi(s, a) = \mathbf{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
+where $G_t = \sum_{t=0}^\infty \gamma^t R(s_t, a_t, s_{t+1})$ is the return.
+The goal of the agent is maximize its expected reward from each state in $\cS$.
 
 
 \section{Experiments} \label{sec:experiments}
 Explain the environment we test on. 
 How the LunarLander env works (i.e. state, action space, and reward structure)
+Explain how DQN works since we use it as our algorithm.
 
 \subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
 Explain the network structure and how we change only final layer with FTA and ReLU.

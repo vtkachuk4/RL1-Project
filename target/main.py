@@ -62,7 +62,7 @@ def main(run_i=0, _use_target = True, activation = "fta", _fta_lower_limit = -20
         n_actions=_n_actions,
         activation=_activation,
         device=_device,
-	use_target = _use_target,
+	    use_target = _use_target,
         eps_end=_eps_end,
         input_dims=_input_dims,
         lr=_lr,

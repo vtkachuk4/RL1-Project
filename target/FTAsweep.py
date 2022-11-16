@@ -5,23 +5,23 @@ from main import main
 if __name__ == "__main__":
     device = "cuda:1"
     activation = 'fta'
-    use_target = True
+    use_target = False
 
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [20],
-        "num_tiles": [20]
+        "fta_upper_limit": [0.1,1,10,50,100],
+        "num_tiles": [16,64,128]
     }
 
     num_runs = 10
     pool = multiprocessing.Pool(processes=num_runs)
     
-    for _fta_upper_limit in fta_params_dict["fta_upper_limit"]:
-        _fta_lower_limit = -1*_fta_upper_limit
-        for num_tiles in fta_params_dict["num_tiles"]:
+    for num_tiles in fta_params_dict["num_tiles"]:
+        for _fta_upper_limit in fta_params_dict["fta_upper_limit"]:
+            _fta_lower_limit = -1*_fta_upper_limit
             _fta_delta = (2*_fta_upper_limit)/num_tiles
             _fta_eta = _fta_delta
-            
+        
             print(
                 "fta_upper_limit: %.2f  " % _fta_upper_limit,
                 "fta_lower_limit: %.2f  " % _fta_lower_limit,

@@ -70,7 +70,7 @@ class Agent:
         n_actions,
         activation,
         device,
-	use_target,
+	    use_target,
         max_mem_size=100000,
         eps_end=0.01,
         eps_dec=5e-5,

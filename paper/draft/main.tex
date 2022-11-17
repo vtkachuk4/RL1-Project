@@ -158,9 +158,33 @@ Experiments related to the second point are shown in section \ref{sub-sec:normal
 
 
 \section{Background} \label{sec:background}
-Some background about sparsity and how it is useful in RL. 
-Mention FTA paper here of course and maybe find any new papers that use FTA as well?
+Representation learning can influence learning efficiency, positively through generalization but negatively through interference \cite[]{bullinaria1995, iCaRL2016, le2017, liu2019}.
+Learned representations using neural networks are especially vulnerable to interference due to aggressive generalization, as updates to one feature’s estimates change the estimates of later features in unexpected ways, degrading model accuracy. 
+Interference in features learned by neural networks is even worse when trained on temporally correlated data \cite[]{liu2020, bengio2020, zhang2022}
 
+Several authors \cite[]{ghiassian2020, liu2019, javed2019, sutton2019;}
+have shown that sparse representations can reduce interference in learning feature updates: only a small number of features are active for any given input, 
+and thus each update is less likely to interfere with the weights of other features. Sparse feature spaces can still be highly expressive and interpretable, 
+as outputs can be traced to the activation of the most input-discriminative features. 
+However, learning such sparse representations in the online setting remains an open problem.
+
+Existing strategies to ensure sparsity are to pre-train representations offline using regularizers \cite[]{liu2019} or meta-learning \cite{javed2019}, 
+or online methods using regularizers with replay buffers \cite{sutton2019}. While sparsity regularizers do improve learning, 
+they often lead to high levels of dead neurons and thus degrades the learned representation over time \cite[]{sutton2019}. 
+Kernel representations can also provide sparse representations online, but do not scale well to large problems due to its computational complexity \cite[]{pan2019fuzzy}. 
+Therefore, there is motivation to find a simpler method to ensure sparsity in learned representations that is easy to implement, train, and scale to larger input spaces.
+
+FTA is an approach to achieve sparsity by design, 
+where an activation function that can be applied to any layer of a neural network provides adjustable sparsity without the need for pre-training or adjustments to the loss function. 
+The FTA function aggregates inputs of any feature layer into bins with differentiable, overlapping zones. Much like Tile Coding \cite[]{tilecoding}, 
+FTA allows learning to be discriminative between different input values through binning, but unlike Tile Coding, 
+FTA maintains input generalization through learning activations within the differentiable regions between bins. 
+When applied to DQN and Deep Deterministic Policy Gradient (DDPG) \cite[]{ddpg}, 
+FTA has been empirically shown to improve agent performance for both discrete and continuous control environments, 
+often outperforming activations like ReLU and Tanh \cite[]{pan2019fuzzy}. Furthermore, FTA-applied networks can often perform better without target networks, 
+circumventing the sample inefficiency problem inherent in their use \cite[]{pan2019fuzzy}. 
+A recent study by \cite{nnrep} on transferring learned representations to networks performing auxiliary tasks found that FTA-based representations 
+transferred better and more consistently than ReLU-based representations for less similar tasks.
 
 \section{Preliminaries} \label{sec:prelims}
 In this section we introduce the Fuzzy Tiling Activation (FTA) and formally define the RL setting.

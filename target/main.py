@@ -51,7 +51,7 @@ def main(run_i=0, _use_target = True, activation = "fta", _fta_lower_limit = -20
     _epsilon = 0.1
     _batch_size = 64
     _n_actions = 4
-    _eps_end = 0.01
+    _eps_end = 0.1
     _input_dims = 8
     _lr = 0.0001
     _seed = run_i*10
@@ -79,8 +79,8 @@ def main(run_i=0, _use_target = True, activation = "fta", _fta_lower_limit = -20
         logger = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
         logger.writerow(["fta params:","lower","upper","delta","eta"])
         logger.writerow(["", str(_fta_lower_limit), str(_fta_upper_limit), str(_fta_delta), str(_fta_eta)])
-        logger.writerow(["agent params:","gamma","epsilon","batch_size","n_actions","eps_end","input_dims","lr","seed"])
-        logger.writerow(["", str(_gamma), str(_epsilon), str(_batch_size), str(_n_actions), str(_eps_end), str(_input_dims), str(_lr), str(_seed)])
+        logger.writerow(["agent params:","gamma","epsilon","batch_size","n_actions","eps_end","use_target","input_dims","lr","seed"])
+        logger.writerow(["", str(_gamma), str(_epsilon), str(_batch_size), str(_n_actions), str(_eps_end), str(_use_target), str(_input_dims), str(_lr), str(_seed)])
         logger.writerow(["Performance logging begins:"])
         logger.writerow(["Episode","Step","Score"])
 

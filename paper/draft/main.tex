@@ -219,8 +219,31 @@ Then explain what hyper-parameter sweeps we did and add the plot showing them (s
 Show the plot of FTA vs ReLU using the same hyper-params as in \cite[]{pan2019fuzzy} and discuss how we see basically same results as them hopefully.
 
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
-Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).
-I think we can leave this as TODO for final report.
+% Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).
+% I think we can leave this as TODO for final report.
+In our experiments, detailed in section \ref{sub-sec:reproduc experiments}, it can be observed that the performance of FTA is quite sensitive to the upper and lower tiling bounds ($u$ and $l=-u$). This reinforces the observation made in \cite{pan2019fuzzy}. In figure \ref{} we can see that the best performance on Lunar Lander was achieved with $u=1$ and worst performance was achieved with $u=100$. It can be inferred intuitively, that for a small value of $u$, many inputs to FTA may be out of its range providing zero gradients. On the other hand, for a large value of $u$, many inputs may activate the same tile. Both resulting in many dead neurons and increasing interference. This means there is a specific value of $u$ which would work best for any specific environment. Since its not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically. It has to be tuned manually by sweeping over a range of values in multiple experiments, dramatically increasing the cost of a project.
+
+We hypothesize that if the inputs to FTA were scaled to a certain range, the performance would be less sensitive to the tiling bounds. We try two different methodologies to achieve this. One, using a Batch Normalization \cite[]{ioffe2015batch} layer before FTA. Two, using a $tanh$ activation layer before FTA. Batch Normalization scales it input $x$ to a learned mean $\beta$ and variance $\gamma$. It is defined by equation \ref{eq:batchnorm}. By using a Batch Norm layer before FTA, we expect it to learn the best $\gamma$ and $\beta$ for any particular tiling bound of FTA.
+
+\begin{equation}
+    y = \frac{x-E[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
+    \label{eq:batchnorm}
+\end{equation}
+ $tanh$, on the other hand, is an activation function which maps the input to a continuous range of values between -1 and 1. The larger the input, the closer the output is to 1 and the smaller the input, the closer the output is to -1. This range of outputs can be controlled by multiplying them with a scalar. It is defined by equation \ref{eq:tanh}. The motivation behind using $tanh$ is to control the range of inputs to FTA, so that a standard tiling bound of $u = -l = 1$ would work in every case.
+
+ \begin{equation}
+    y = \frac{e^x-e^{-x}}{e^x+e^{-x}}
+    \label{eq:tanh}
+ \end{equation}
+
+To test these hypothesis, we run two experiments each with $tanh$ and Batch Norm as the layer preceding FTA on Lunar Lander. One, with the best performing FTA tiling bounds and two, with the worst performing FTA tiling bounds. All other parameters and configurations are kept the same as those in section \ref{sub-sec:reproduc experiments}. Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic return versus environment time steps for all four of these experiments.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics{}
+    \caption{Evaluation learning curves plotting episodic return versus environment time steps for Batch Norm and $tanh$ as layers preceding FTA.}
+    \label{fig:bnvtanh}
+\end{figure}
 
 
 \section{Discussion} \label{sec:discussion}

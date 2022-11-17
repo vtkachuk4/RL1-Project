@@ -60,7 +60,7 @@ def main(run_i=0, _use_target = True, activation = "relu", _fta_lower_limit = -2
         _epsilon = 0.1
         _batch_size = 64
         _n_actions = 4
-        _eps_end = 0.01
+        _eps_end = 0.1
         _input_dims = 8
         _lr = 0.0001
         _seed = run_i*10

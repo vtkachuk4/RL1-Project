@@ -23,7 +23,7 @@ def main():
     _epsilon = 1.0
     _batch_size = 256
     _n_actions = 4
-    _eps_end = 0.01
+    _eps_end = 0.1
     _input_dims = [8]
     _lr = 0.0003
     _seed = 0

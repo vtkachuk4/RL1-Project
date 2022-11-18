@@ -20,7 +20,7 @@
 
 
 % to avoid loading the natbib package, add option nonatbib:
-%    \usepackage[nonatbib]{neurips_2022}
+  %  \usepackage[nonatbib]{neurips_2022}
 
 
 \usepackage[utf8]{inputenc} % allow utf-8 input
@@ -40,6 +40,7 @@
 \usepackage{amssymb}
 \usepackage{amsthm}
 \usepackage{bbm}
+\usepackage{graphicx}
 \newcommand{\RR}{\mathbb{R}}
 \newcommand{\PP}{\mathbb{P}}
 \newcommand{\cS}{\mathcal{S}}
@@ -100,47 +101,48 @@
 
 \begin{abstract}
   Sparsity has been shown to improve model performance on decision making problems with non-stationary data, such as online supervised learning and reinforcement learning (RL).
-  Sparsity is when a large number of weights in a neural network are approximately zero.
-  The fuzzy tiling activation (FTA) has been proposed to enforce sparsity by design, and has been shown to outperform other activations, such as ReLU and Tanh, that do not enforce sparsity.
+  Sparsity is when a large number of features in a neural network are approximately zero.
+  The fuzzy tiling activation (FTA) has been proposed to enforce sparsity by design, and has been shown to outperform other activations, such as ReLU and $\tanh$, that do not enforce sparsity.
   However, a difficulty of using the FTA is that it is sensitive to a new \textit{tiling bound} hyperparameter, which currently requires a search to be set effectively.
   In this work we do two things. 
-  First, we reproduce experiments comparing FTA to ReLU using deep Q-learning (DQN) on the LunarLander RL environment, showing that indeed, for this environment FTA is no better than ReLU if the tiling bound is not set appropriately,
-  Second, we empirically test if a simple technique of normalizing the activation values passed into the FTA cell can remove the need for setting the tiling bound.
+  First, we reproduce experiments comparing FTA with ReLU when using deep Q-learning (DQN) on the LunarLander RL environment, showing that indeed, for this environment FTA is no better than ReLU if the tiling bound is not set appropriately,
+  Second, we empirically test if simple techniques for normalizing the activation values passed into the FTA cell can remove the need for search when setting the tiling bound.
 
 
 \end{abstract}
 
 
 \section{Introduction} \label{sec:intro}
-Neural networks (NN) have been shown to perform well on several challenging problems \cite{mnih2013playing,silver2017mastering} 
+Neural networks (NN) have been shown to perform well on several challenging problems \cite{brown2020language,krizhevsky2017imagenet,mnih2013playing,silver2017mastering} 
 Part of the reason for their success is due to their ability to learn good representations of the input data, which can then be used to effectively generalize.
 A representation of an input is defined as the values of all the neurons of the NN when the input is passed into the NN.
 The values of all the neurons are commonly called \textit{features}.  
-Unfortunately, when the NN is trained online (data recieved sequentially), interference can occur between the representations that are learned CITE.
-Interference is loosly defined as when a new learned representation affects the performance of the NN on previously seen data in a negative way (i.e. the old representation becomes worse due to the newly learned one).
+Unfortunately, when the NN is trained online (data recieved sequentially), interference can occur between the representations that are learned \cite[]{chandak2019learning,caselles2018continual,madjiheurem2019representation}.
+Interference is loosely defined as when a newly learned representation affects the performance of the NN on previously seen data in a negative way (i.e. the old representation becomes worse due to the newly learned one).
 A potentially useful intuition for when interference can occur is when the representation for some input $x_1$ is dense (a large number of features are non-zero), 
-since then, if another input $x_2$ is sufficiently different (uncorolated) from $x_1$, its representation should likely be quite different.
-However, in order for a different representation to be learned for $x_1$ the NN will likely have to update the weights that contribute to the representation of $x_1$, 
-thus likely making the representation for $x_1$ worse in order to learn a good representation for $x_2$.
+since then, if another input $x_2$ is sufficiently different (uncorrelated) from $x_1$, its representation should likely be quite different.
+However, in order for a different representation to be learned for $x_2$ the NN will likely have to update the weights that contribute to the representation of $x_1$, 
+thus making the representation for $x_1$ worse in order to learn a good representation for $x_2$.
 
-A method that has been found to reduce interference, is to enforce sparse representations (a large number of features are zero) CITE.
-Revisiting the example above with inputs $x_1, x_2$, if the representation for $x_1$ is sparse, then the representation that is learned for $x_2$ can use weights that are unused for the representation of $x_1$, 
+A method that has been found to reduce interference, is to enforce sparse representations (a large number of features are approximately zero) \cite[]{liu2019,javed2019,rafati2019learning}.
+We revisit the example above with inputs $x_1$ and $x_2$.
+If the representation for $x_1$ is sparse, then the representation that is learned for $x_2$ can use weights that are unused for the representation of $x_1$, 
 thus causing no interference between thkkke features for $x_1$ and $x_2$.
 The best way to enforce sparsity is an active topic of research 
-A discussion of related works can be found in Section \ref{sec:background}.
+A detailed discussion of related works can be found in Section \ref{sec:background}.
 
 One way to enforce sparsity is by design, a method which does this is using a \textit{fuzzy tiling activation} (FTA) \cite[]{pan2019fuzzy}.
-FTA is an activation function that can be used at each layer of a network, similar to ReLU or Tanh.
-Different from ReLU and Tanh is that FTA has a vector output instead of a scalar output.
+FTA is an activation function that can be used at each layer of a NN, similar to ReLU or $\tanh$.
+Different from ReLU and $\tanh$ is that FTA has a vector output instead of a scalar output.
 FTA takes as input a scalar and outputs a one-hot vector.
 The output of FTA can be thought of as mapping a scalar $z \in \RR$ to one of $k$ evenly spaced bins in $\RR^k$.
 A critical step to using FTA effectively is setting the tiling bound parameter $u$.
 This is because $z$ should be in $[-u, u]$ to work well. 
 However, just satisfying this is usually not enough for good performance (as one could easily set $u$ very large).
 For instance if $u = 10$ and $k = 4$ then the bins would be $[-10, -5), [-5, 0), [0, 5), [5, 10]$ 
-and if $z$ is really takes values in $[0,1]$ then it will always map to the same bin (bin $3$ since $[0, 1] \subset [0, 5))$.
+and if $z$ really takes values in $[0,1]$ then it will always map to the same bin (bin $3$ since $[0, 1] \subset [0, 5))$.
 Thus, as discussed by \cite[]{pan2019fuzzy}, setting the tiling bound is important; however, no good solution exists for setting it other than performing a search.
-The sensitivity to the tiling bound was especially prominant in the work of \cite[]{pan2019fuzzy} when using FTA in deep Q-network (DQN) \cite[]{mnih2013playing} in the LunarLander RL environment.
+The sensitivity to the tiling bound was especially prominant in the work of \cite[]{pan2019fuzzy} when using FTA with a deep Q-network (DQN) \cite[]{mnih2013playing} in the LunarLander RL environment.
 
 As such, in this work we aim to do two things:
 \begin{enumerate}
@@ -162,7 +164,7 @@ Representation learning can influence learning efficiency, positively through ge
 Learned representations using neural networks are especially vulnerable to interference due to aggressive generalization, as updates to one feature’s estimates change the estimates of later features in unexpected ways, degrading model accuracy. 
 Interference in features learned by neural networks is even worse when trained on temporally correlated data \cite[]{liu2020, bengio2020, zhang2022}
 
-Several authors \cite[]{ghiassian2020, liu2019, javed2019, sutton2019;}
+Several authors \cite[]{ghiassian2020,liu2019,javed2019,sutton2019}
 have shown that sparse representations can reduce interference in learning feature updates: only a small number of features are active for any given input, 
 and thus each update is less likely to interfere with the weights of other features. Sparse feature spaces can still be highly expressive and interpretable, 
 as outputs can be traced to the activation of the most input-discriminative features. 
@@ -192,8 +194,9 @@ In this section we introduce the Fuzzy Tiling Activation (FTA) and formally defi
 \subsection{Fuzzy Tiling Activation}
 First we introduce the simpler \textit{tiling activation} (TA) and then extend it to the FTA.
 A TA is a function $\phi: \RR \to \RR^k$, which expects inputs $z \in [-u, u]$ and maps them to one-hot vectors (standard basis) in $\RR^k$.
+The $[-u, u]$ is referred to as the tiling bound.
 For example, if $u=10$ and $k=4$, then any $z \in [-10,-5)$ would be mapped to $(1, 0 ,0, 0) \in \RR^k$, any $z \in [-5, 0)$ would be mapped to $(0, 1, 0, 0)$, any $z \in [0, 5)$ would be mapped to $(0, 0, 1, 0)$, and any $z \in [5, 10]$ would be mapped to $(0, 0, 0, 1)$.
-\cite{pan2019fuzzy} show that the TA can implemented efficientely as follows.
+\cite{pan2019fuzzy} show that the TA can be implemented efficientely as follows.
 Assume you want evenly spaced bins of size $\delta > 0$, and $k = 2 u/ \delta$, where WLOG $u$ was chosen such that it is divisable by $\delta$. 
 Define the tiling vector 
 $$\mathbf{c} = (-u, -u + \delta, l + 2 \delta, \dots, u - 2 \delta, u - \delta) \in \RR^k$$
@@ -212,19 +215,19 @@ $$\phi_\eta(z) = \mathbbm{1} - I_{\eta, +} (\max(\mathbf{c} - z \mathbbm{1}) + \
 where $I_{\eta, +}$ is applied element wise to vectors
 The reason for the use of fuzzy in the name of FTA can be understood from the definition of $I_{\eta, +}$.
 The term $I_+(\eta -x)$ is $1$ when $x < \eta$, while when $x > \eta$, $I_+(x - \eta)$ is $1$.
-Thus, when $x < \eta$ we have that $I_{\eta ,+}$ evaluates to $x$, giving smoother (fuzzy) indicator function.
+Thus, when $x < \eta$ we have that $I_{\eta ,+}$ evaluates to $x$, giving a smoother (fuzzy) indicator function.
 Notice, that this means for $x < \eta$ the derivative is non-zero, allowing us to use backpropagation to train out networks.
 Also, when $\eta = 0$ the original indicator function $I_+$ can be recovered.
 
 \subsection{Reinforcement Learning}
 The reinforcement learning (RL) setting can be formulated as an markov decision process (MDP).
-Formally an MDP is characterized by the tuple $(\cS, \cA, \PP, R, \gamma)$, where $\cS$ is that state space, $cA$ is the action space,
-$\PP$ is the transition probability kernel, $R: \cS \times \cA \cS \to \RR$ is the reward function, and $\gamma \in [0, 1]$ is the discount factor.
+Formally an MDP is characterized by the tuple $(\cS, \cA, \PP, R, \gamma)$, where $\cS$ is that state space, $\cA$ is the action space,
+$\PP$ is the transition probability kernel, $R: \cS \times \cA \times \cS \to \RR$ is the reward function, and $\gamma \in [0, 1]$ is the discount factor.
 A policy $\pi: \cS \to \cM_1$ is a map from states to distributions over actions, where $\cM_1$ is the set of all probability measures over actions $\cA$.
 Then, an agent (policy) interacts with an MDP as follows.
 At each time step $t \in 1, 2 \cdots$ the agent observes a state $s_t \in \cS$.
 The agent takes an action according to its policy $a_t \sim \pi(s_t)$.
-The agent then transits to its next state according to $s_{t+1} \sim \PP(s, a)$, and recieves a reward $R(s_t, a_t, s_{t+1})$.
+The agent then transits to its next state according to $s_{t+1} \sim \PP(s_t, a_t)$, and recieves a reward $R(s_t, a_t, s_{t+1})$.
 
 An action value function under policy $\pi$ is defined as 
 $$Q_\pi(s, a) = \mathbf{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
@@ -242,29 +245,58 @@ Explain the network structure and how we change only final layer with FTA and Re
 Then explain what hyper-parameter sweeps we did and add the plot showing them (should discuss patterns we saw here for FTA hyper-params and how they confirm those discussed in \cite[]{pan2019fuzzy}).
 Show the plot of FTA vs ReLU using the same hyper-params as in \cite[]{pan2019fuzzy} and discuss how we see basically same results as them hopefully.
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=3cm]{example-image-a}
+    \caption{}
+    \label{fig:fta param sweep}
+\end{figure}
+
+
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
 % Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).
 % I think we can leave this as TODO for final report.
-In our experiments, detailed in section \ref{sub-sec:reproduc experiments}, it can be observed that the performance of FTA is quite sensitive to the upper and lower tiling bounds ($u$ and $l=-u$). This reinforces the observation made in \cite{pan2019fuzzy}. In figure \ref{} we can see that the best performance on Lunar Lander was achieved with $u=1$ and worst performance was achieved with $u=100$. It can be inferred intuitively, that for a small value of $u$, many inputs to FTA may be out of its range providing zero gradients. On the other hand, for a large value of $u$, many inputs may activate the same tile. Both resulting in many dead neurons and increasing interference. This means there is a specific value of $u$ which would work best for any specific environment. Since its not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically. It has to be tuned manually by sweeping over a range of values in multiple experiments, dramatically increasing the cost of a project.
+In our experiments, detailed in section \ref{sub-sec:reproduc experiments}, it can be observed that the performance of FTA is quite sensitive to the tiling bound $[-u, u]$. 
+This reinforces the observation made in \cite{pan2019fuzzy}. 
+In figure \ref{fig:fta param sweep} we can see that the best performance on LunarLander was achieved with $u=1$ and worst performance was achieved with $u=100$. 
+It can be inferred intuitively, that for a small value of $u$, many inputs to FTA may be out of its range providing zero gradients. 
+On the other hand, for a large value of $u$, many inputs may activate the same tile. 
+Both resulting in many dead neurons and increasing interference. 
+This means there is a specific value of $u$ which would work best for any specific environment. 
+Since its not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically. 
+It has to be tuned manually by sweeping over a range of values in multiple experiments, dramatically increasing the cost of a project.
 
-We hypothesize that if the inputs to FTA were scaled to a certain range, the performance would be less sensitive to the tiling bounds. We try two different methodologies to achieve this. One, using a Batch Normalization \cite[]{ioffe2015batch} layer before FTA. Two, using a $tanh$ activation layer before FTA. Batch Normalization scales it input $x$ to a learned mean $\beta$ and variance $\gamma$. It is defined by equation \ref{eq:batchnorm}. By using a Batch Norm layer before FTA, we expect it to learn the best $\gamma$ and $\beta$ for any particular tiling bound of FTA.
+We hypothesize that if the inputs to FTA were scaled to a certain range, the performance would be less sensitive to the tiling bounds. 
+We try two different methodologies to achieve this. 
+First, using a Batch Normalization \cite[]{ioffe2015batch} layer before FTA. 
+Second, using a $tanh$ activation layer before FTA. 
 
+Batch Normalization scales its input $x$ to a learned mean $\beta$ and variance $\gamma$. 
+It is defined as 
 \begin{equation}
     y = \frac{x-E[x]}{\sqrt{Var[x] + \epsilon}} * \gamma + \beta
     \label{eq:batchnorm}
 \end{equation}
- $tanh$, on the other hand, is an activation function which maps the input to a continuous range of values between -1 and 1. The larger the input, the closer the output is to 1 and the smaller the input, the closer the output is to -1. This range of outputs can be controlled by multiplying them with a scalar. It is defined by equation \ref{eq:tanh}. The motivation behind using $tanh$ is to control the range of inputs to FTA, so that a standard tiling bound of $u = -l = 1$ would work in every case.
+By using a Batch Norm layer before FTA, we expect it to learn the best $\gamma$ and $\beta$ for any particular tiling bound of FTA.
 
+On the other hand, $\tanh$ is an activation function which maps the input to a continuous range of values between -1 and 1. 
+The larger the input, the closer the output is to 1 and the smaller the input, the closer the output is to -1. 
+This range of outputs can be controlled by multiplying them with a scalar. 
+It is defined as 
  \begin{equation}
     y = \frac{e^x-e^{-x}}{e^x+e^{-x}}
     \label{eq:tanh}
  \end{equation}
+The motivation behind using $tanh$ is to control the range of inputs to FTA, so that a standard tiling bound of $u = -l = 1$ would work in every case.
 
-To test these hypothesis, we run two experiments each with $tanh$ and Batch Norm as the layer preceding FTA on Lunar Lander. One, with the best performing FTA tiling bounds and two, with the worst performing FTA tiling bounds. All other parameters and configurations are kept the same as those in section \ref{sub-sec:reproduc experiments}. Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic return versus environment time steps for all four of these experiments.
+To test these hypothesis, we run two experiments each with $tanh$ and Batch Norm as the layer preceding FTA on Lunar Lander. 
+One, with the best performing FTA tiling bounds and two, with the worst performing FTA tiling bounds. 
+All other parameters and configurations are kept the same as those in section \ref{sub-sec:reproduc experiments}. 
+Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic return versus environment time steps for all four of these experiments.
 
 \begin{figure}[h]
     \centering
-    \includegraphics{}
+    \includegraphics[width=3cm]{example-image-a}
     \caption{Evaluation learning curves plotting episodic return versus environment time steps for Batch Norm and $tanh$ as layers preceding FTA.}
     \label{fig:bnvtanh}
 \end{figure}
@@ -275,7 +307,6 @@ Discuss how the reproducibility experiment basically matches the results in \cit
 Discuss what we find from normalizing activations (i.e. if it worked or not, and if not any hypothesis why might have as to why)
 
 
-% \section*{References}
 \newpage
 \bibliography{references}
 

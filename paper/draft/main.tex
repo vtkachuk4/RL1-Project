@@ -41,6 +41,7 @@
 \usepackage{amsthm}
 \usepackage{bbm}
 \usepackage{graphicx}
+\graphicspath{ {./figures/} }
 \newcommand{\RR}{\mathbb{R}}
 \newcommand{\PP}{\mathbb{P}}
 \newcommand{\cS}{\mathcal{S}}
@@ -236,20 +237,44 @@ The goal of the agent is maximize its expected reward from each state in $\cS$.
 
 
 \section{Experiments} \label{sec:experiments}
-Explain the environment we test on. 
-How the LunarLander env works (i.e. state, action space, and reward structure)
-Explain how DQN works since we use it as our algorithm.
+
+The LunarLander environment, from OpenAI Gym \cite[]{brockman2016gym} is a trajectory rocket optimization problem, where the goal is to land a moon lander on a landing pad.
+The state space of the environment $\cS$ is compromised of 8 attributes; $x$ and $y$ coordinates, $v_x$ and $v_y$ horizontal and vertical velocities, $\theta$ and $v_\theta$ angle and angular velocity, and 2 booleans to show if the left or right leg is touching the ground. At each timestep $t$ the action space $\cA$($s_t$) = $\tt\{do\ nothing,\ fire\ left\ engine,\ fire\ main\ engine,\ fire\ right\ engine\}$. The rewards for landing on the landing pad is between 100 to 140 points, with an additional 100 points if it stops on it, hence a solved episode is +200 points. Firing the main engine has -0.3 and the side engines -0.03 points penalty, and the lander gets -100 points if it crashes. In the event that the agent crashes, leaves the viewport, or remains stationary without touching another body, the episode will terminate.
+
+In our experiments, we use Deep Q-Learning (DQN) \cite[]{mnih2013playing}. As explained in section \ref{sub-sec:reinforcement}, the goal of the agent is to interact with the environment in a way that maximizes its expected reward.
+
+the optimial action value function under policy $\pi$ is defined as:
+$$Q^*(s, a) = \mathbf max_\pi{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
+
+In Q-Learning action value function is iteratively updated by using Bellman equation to converge to the optimal action value function:
+$$Q_{t+1}(s, a) = E[r + \gamma max_{a_{t+1}} Q_t(s_{t+1}, a_{t+1})|S_t =s, A_t=a]$$
+This converges to optimal action value function, $Q_t \rightarrow Q^*, t \rightarrow \infty$. A neural network is used as function approximator with weights $\theta$ to estimate action value function, $Q(s, a; \theta) \approx Q^*(s, a)$, and it is trained by minimizing the loss function, that changes by each iteration $i$:
+$$L_i(\theta_i) = E_{s, a\sim p(.)}\big[(y_i - Q(s, a; \theta_i))^2\big],$$
+Where $y_i = E_{s^\prime\sim\varepsilon}[r + \gamma max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1}) | s, a]$
+
+Agent's experience at each timestep is stored into a $replay\ memory$, a random minibatch of expriences are samepled randomly from this memory to calculate the loss function, and the neural network is trained by performing a gradient descent on the loss function.
 
 \subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
-Explain the network structure and how we change only final layer with FTA and ReLU.
-Then explain what hyper-parameter sweeps we did and add the plot showing them (should discuss patterns we saw here for FTA hyper-params and how they confirm those discussed in \cite[]{pan2019fuzzy}).
-Show the plot of FTA vs ReLU using the same hyper-params as in \cite[]{pan2019fuzzy} and discuss how we see basically same results as them hopefully.
+
+To reproduce the experiments in \cite{pan2019fuzzy}, we are using 64 $\times$ 64 neural network with ReLU activation functions at every layer with the exception of the output layer, which is linear. For {\bf DQN-FTA}, we change the activation function of the last hidden layer to the FTA activation function, and we keep the same settings for FTA in all experiments: $[l, u] = [-20, 20]$ and $\eta = \delta = 2.0$.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[height=4cm]{ftavrelu.png}
+    \caption{Evaluation learning curves of {\bf DQN-FTA(black)}, {\textcolor{red} {\bf DQN(red)}}. The {\bf dotted} line shows the algorithms trained with target network. The results are averaged over 10 runs, with shaded area showing the standard error.}
+    \label{fig:ftavrelu}
+\end{figure}
+
+The results in figure \ref{fig:ftavrelu} do not show the same pattern as in \cite{pan2019fuzzy}. While DQN with ReLu activation function on the last layer with and without the target network has similar performance, DQN-FTA without the target network performs much better.
+\newpage
+
+To show the sensitivity of the FTA to tiling bounds, we sweep over different values of $[l, u], u = \{0.1,1,10,50,100\}$ and $l = -u$ and try different number of tiles $k= \{16, 24, 128\}$ for each tiling bounds.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=3cm]{example-image-a}
-    \caption{}
-    \label{fig:fta param sweep}
+    \caption{(a) Evaluation learning curves ...}
+    \label{fig:sweepfta}
 \end{figure}
 
 

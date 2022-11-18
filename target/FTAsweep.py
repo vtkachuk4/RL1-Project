@@ -3,14 +3,16 @@ from functools import partial
 from main import main
 
 if __name__ == "__main__":
-    device = "cuda:1"
+    device = "cuda:0"
     activation = 'fta'
     use_target = False
 
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [0.1,1,10,50,100],
-        "num_tiles": [16,64,128]
+        "fta_upper_limit": [10,50,100],
+        "num_tiles": [64]
+        # "fta_upper_limit": [20],
+        # "num_tiles": [20]
     }
 
     num_runs = 10

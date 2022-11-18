@@ -33,11 +33,11 @@ def evaluation(agent, seed=1):
         if done or truncated:
             return score
 
-def main(run_i=0, _use_target = True, activation = "relu", _fta_lower_limit = -20, _fta_upper_limit = 20, 
+def main(run_i=0, _use_target = False, activation = "relu", _fta_lower_limit = -20, _fta_upper_limit = 20, 
         _fta_delta = 2, _fta_eta = 2, _device="cuda:0"):
     env = gym.make("LunarLander-v2")
     
-    for run_c in range(20):
+    for run_c in range():
         # Activation params
         if activation == "fta":
             _activation = FTA(_fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta)
@@ -54,7 +54,7 @@ def main(run_i=0, _use_target = True, activation = "relu", _fta_lower_limit = -2
         else:
             run_i = run_c
             _use_target = True
-
+        
         # Agent init
         _gamma = 0.99
         _epsilon = 0.1
@@ -64,7 +64,7 @@ def main(run_i=0, _use_target = True, activation = "relu", _fta_lower_limit = -2
         _input_dims = 8
         _lr = 0.0001
         _seed = run_i*10
-        _large_expansion_factor = 20 #THIS IS FOR -20,20 initial comparison between FTA and DQN-LARGE, k = expansion factor
+        _large_expansion_factor = 0 #THIS IS FOR -20,20 initial comparison between FTA and DQN-LARGE, k = expansion factor = 20
         agent = Agent(
             gamma=_gamma,
             epsilon=_epsilon,

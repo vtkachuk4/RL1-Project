@@ -220,7 +220,7 @@ Thus, when $x < \eta$ we have that $I_{\eta ,+}$ evaluates to $x$, giving a smoo
 Notice, that this means for $x < \eta$ the derivative is non-zero, allowing us to use backpropagation to train out networks.
 Also, when $\eta = 0$ the original indicator function $I_+$ can be recovered.
 
-\subsection{Reinforcement Learning}
+\subsection{Reinforcement Learning} \label{sub-sec:reinforcement}
 The reinforcement learning (RL) setting can be formulated as an markov decision process (MDP).
 Formally an MDP is characterized by the tuple $(\cS, \cA, \PP, R, \gamma)$, where $\cS$ is that state space, $\cA$ is the action space,
 $\PP$ is the transition probability kernel, $R: \cS \times \cA \times \cS \to \RR$ is the reward function, and $\gamma \in [0, 1]$ is the discount factor.

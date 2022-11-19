@@ -129,7 +129,7 @@ A method that has been found to reduce interference, is to enforce sparse repres
 We revisit the example above with inputs $x_1$ and $x_2$.
 If the representation for $x_1$ is sparse, then the representation that is learned for $x_2$ can use weights that are unused for the representation of $x_1$, 
 thus causing no interference between thkkke features for $x_1$ and $x_2$.
-The best way to enforce sparsity is an active topic of research 
+The best way to enforce sparsity is an active topic of research
 A detailed discussion of related works can be found in Section \ref{sec:background}.
 
 One way to enforce sparsity is by design, a method which does this is using a \textit{fuzzy tiling activation} (FTA) \cite[]{pan2019fuzzy}.
@@ -256,26 +256,34 @@ Agent's experience at each timestep is stored into a $replay\ memory$, a random 
 
 \subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
 
-To reproduce the experiments in \cite{pan2019fuzzy}, we are using 64 $\times$ 64 neural network with ReLU activation functions at every layer with the exception of the output layer, which is linear. For {\bf DQN-FTA}, we change the activation function of the last hidden layer to the FTA activation function, and we keep the same settings for FTA in all experiments: $[l, u] = [-20, 20]$ and $\eta = \delta = 2.0$.
+Following the same settings as in \cite{pan2019fuzzy}, we use a two-layer neural network with different acivation function in the last hidden layer as the main difference. For DQN and DQN-Large, we use ReLU activation function in all the layers, with the exception of the last layer which is linear.
+Since DQN with FTA activation function expands the number of features, its last hidden layer is $k = (l-u)/\delta$ times bigger than the DQN, Hence we use DQN-Large with the last hidden layer of the same size of DQN-FTA with and without the target network.
+
+For DQN-FTA in the last layer we set $[l, u] = [-20, 20]$ and $\eta = \delta = 2.0$, hence $k = 40/2 = 20$.
+
 
 \begin{figure}[h]
     \centering
     \includegraphics[height=4cm]{ftavrelu.png}
-    \caption{Evaluation learning curves of {\bf DQN-FTA(black)}, {\textcolor{red} {\bf DQN(red)}}. The {\bf dotted} line shows the algorithms trained with target network. The results are averaged over 10 runs, with shaded area showing the standard error.}
+    \caption{Evaluation learning curves of {\bf DQN-FTA(black)}, {\textcolor{red} {\bf DQN(red)}} and {\textcolor{blue} {\bf DQN-Large(blue)} }. The {\bf dotted} line shows the algorithms trained with target network. The results are averaged over 10 runs, with shaded area showing the standard error.}
     \label{fig:ftavrelu}
 \end{figure}
 
-The results in figure \ref{fig:ftavrelu} do not show the same pattern as in \cite{pan2019fuzzy}. While DQN with ReLu activation function on the last layer with and without the target network has similar performance, DQN-FTA without the target network performs much better.
+
+
+In figure \ref{fig:ftavrelu}, we observe that, while DQN-FTA with and without target network performs slightly better than DQN, DQN-Large outperforms both DQN and DQN-FTA.
 \newpage
 
-To show the sensitivity of the FTA to tiling bounds, we sweep over different values of $[l, u], u = \{0.1,1,10,50,100\}$ and $l = -u$ and try different number of tiles $k= \{16, 24, 128\}$ for each tiling bounds.
+To show the sensitivity of tiling bounds, we repeat the experiment for DQN-FTA with different values of $u \in \{0.1,1,10,50,100\}, l = -u$ with different number of tiles $k \in \{16, 24, 128\}$ for each tiling bounds.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=3cm]{example-image-a}
-    \caption{(a) Evaluation learning curves ...}
+    \includegraphics[height=4cm]{sweepfta.png}
+    \caption{Evaluation learning curves of DQN-FTA with different values of tiling bounds: $u \in \{0.1, 1, 10, 50, 100\}, l = -u$, with different number of tiles $k \in \{16, 64, 128\}$.}
     \label{fig:sweepfta}
 \end{figure}
+
+It can be seen that, ...
 
 
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
@@ -283,7 +291,7 @@ To show the sensitivity of the FTA to tiling bounds, we sweep over different val
 % I think we can leave this as TODO for final report.
 In our experiments, detailed in section \ref{sub-sec:reproduc experiments}, it can be observed that the performance of FTA is quite sensitive to the tiling bound $[-u, u]$. 
 This reinforces the observation made in \cite{pan2019fuzzy}. 
-In figure \ref{fig:fta param sweep} we can see that the best performance on LunarLander was achieved with $u=1$ and worst performance was achieved with $u=100$. 
+In figure \ref{fig:sweepfta} we can see that the best performance on LunarLander was achieved with $u=1$ and worst performance was achieved with $u=100$.
 It can be inferred intuitively, that for a small value of $u$, many inputs to FTA may be out of its range providing zero gradients. 
 On the other hand, for a large value of $u$, many inputs may activate the same tile. 
 Both resulting in many dead neurons and increasing interference. 

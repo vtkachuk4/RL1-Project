@@ -271,19 +271,19 @@ For DQN-FTA in the last layer we set $[l, u] = [-20, 20]$ and $\eta = \delta = 2
 
 
 
-In figure \ref{fig:ftavrelu}, we observe that, while DQN-FTA with and without target network performs slightly better than DQN, DQN-Large outperforms both DQN and DQN-FTA.
-\newpage
+In figure \ref{fig:ftavrelu}, we observe that, while DQN-FTA with and without the target network performs slightly better than DQN, DQN-Large outperforms both DQN and DQN-FTA.
 
 To show the sensitivity of tiling bounds, we repeat the experiment for DQN-FTA with different values of $u \in \{0.1,1,10,50,100\}, l = -u$ with different number of tiles $k \in \{16, 24, 128\}$ for each tiling bounds.
 
 \begin{figure}[h]
     \centering
     \includegraphics[height=4cm]{sweepfta.png}
-    \caption{Evaluation learning curves of DQN-FTA with different values of tiling bounds: $u \in \{0.1, 1, 10, 50, 100\}, l = -u$, with different number of tiles $k \in \{16, 64, 128\}$.}
+    \caption{Evaluation learning curves of DQN-FTA using different values of tiling bounds: $u \in \{0.1, 1, 10, 50, 100\}, l = -u$, with different number of tiles $k \in \{16, 64, 128\}$. The results are averaged over 10 runs.}
     \label{fig:sweepfta}
 \end{figure}
 
-It can be seen that, ...
+It can be seen that FTA in LunarLander performs the best, when we set $u$ to a reasonably small value. However, it performs poorly when it is set to a large or very small number. With $u \in \{10, 50, 100\}$, performance imporves by increasing the number of tiles $k$, but it worsens when $u$ is very samll.
+
 
 
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}

@@ -284,7 +284,14 @@ To show the sensitivity of tiling bounds, we repeat the experiment for DQN-FTA w
 
 It can be seen that FTA in LunarLander performs the best, when we set $u$ to a reasonably small value. However, it performs poorly when it is set to a large or very small number. With $u \in \{10, 50, 100\}$, performance imporves by increasing the number of tiles $k$, but it worsens when $u$ is very samll.
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[height=4cm]{bestfta.png}
+    \caption{Evaluation learning curves of {\bf DQN-FTA(black) ($u=20, k = 40$)}, {\textcolor{red} {\bf DQN(red)}},  {\textcolor{blue} {\bf DQN-Large(blue)}} and {\textcolor{green} {\bf DQN-FTA(green)}($u=1, k=64$)}. The {\bf dotted} line shows the algorithms trained with target network.}
+    \label{fig:bestfta}
+\end{figure}
 
+We found FTA sensitive to tiling bound, Hence by coosing the the right value of $u$, We observe that it ourperforms both DQN and DQN-Large. Figure \ref{fig:bestfta} shows DQN-FTA without target network and $u=1, k=64$, compared to other settings.
 
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
 % Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).

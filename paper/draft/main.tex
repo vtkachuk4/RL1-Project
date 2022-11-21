@@ -33,6 +33,7 @@
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
 
+\definecolor{mygreen}{RGB}{22, 139, 22}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % things we added
 
@@ -287,7 +288,7 @@ It can be seen that FTA in LunarLander performs the best, when we set $u$ to a r
 \begin{figure}[h]
     \centering
     \includegraphics[height=4cm]{bestfta.png}
-    \caption{Evaluation learning curves of {\bf DQN-FTA(black) ($u=20, k = 40$)}, {\textcolor{red} {\bf DQN(red)}},  {\textcolor{blue} {\bf DQN-Large(blue)}} and {\textcolor{green} {\bf DQN-FTA(green)}($u=1, k=64$)}. The {\bf dotted} line shows the algorithms trained with target network.}
+    \caption{Evaluation learning curves of {\bf DQN-FTA(black) ($u=20, k = 40$)}, {\textcolor{red} {\bf DQN(red)}},  {\textcolor{blue} {\bf DQN-Large(blue)}} and {\textcolor{mygreen} {\bf DQN-FTA(green)}($u=1, k=64$)}. The {\bf dotted} line shows the algorithms trained with target network.}
     \label{fig:bestfta}
 \end{figure}
 
@@ -298,13 +299,13 @@ We found FTA sensitive to tiling bound, Hence by coosing the the right value of 
 % I think we can leave this as TODO for final report.
 In our experiments, detailed in section \ref{sub-sec:reproduc experiments}, it can be observed that the performance of FTA is quite sensitive to the tiling bound $[-u, u]$. 
 This reinforces the observation made in \cite{pan2019fuzzy}. 
-In figure \ref{fig:sweepfta} we can see that the best performance on LunarLander was achieved with $u=1$ and worst performance was achieved with $u=100$.
+In figure \ref{fig:sweepfta} we can see that the best performance on LunarLander was achieved with $u=1$, and it got worse as we increased or decreased $u$.
 It can be inferred intuitively, that for a small value of $u$, many inputs to FTA may be out of its range providing zero gradients. 
 On the other hand, for a large value of $u$, many inputs may activate the same tile. 
 Both resulting in many dead neurons and increasing interference. 
 This means there is a specific value of $u$ which would work best for any specific environment. 
 Since its not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically. 
-It has to be tuned manually by sweeping over a range of values in multiple experiments, dramatically increasing the cost of a project.
+It has to be tuned manually by sweeping over a range of values in multiple experiments, which increases the cost of a project.
 
 We hypothesize that if the inputs to FTA were scaled to a certain range, the performance would be less sensitive to the tiling bounds. 
 We try two different methodologies to achieve this. 

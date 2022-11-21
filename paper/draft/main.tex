@@ -336,8 +336,30 @@ Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic 
 
 
 \section{Discussion} \label{sec:discussion}
-Discuss how the reproducibility experiment basically matches the results in \cite[]{pan2019fuzzy} paper
-Discuss what we find from normalizing activations (i.e. if it worked or not, and if not any hypothesis why might have as to why)
+In this paper, we investigate the properties of FTA through empirical experimentation as an extension to the original FTA paper by \cite[]{pan2019fuzzy}. 
+We first reproduced the learning curve evaluation for DQN-FTA, DQN, and DQN-Large in LunarLander, and found similar trends. 
+When comparing the untuned FTA agent ($u = 20$) against the tuned ReLU agents, we found that FTA and DQN-Large reached higher average returns 
+by $5\times10^5$ time steps than \cite{pan2019fuzzy}. It is currently unknown as to why our FTA and DQN-Large implementations perform better than the original paper. 
+There are many potential reasons: stochasticity in our runs and initialization, our specific seeds used to evaluate performance, or even the implementation framework 
+(we used PyTorch while \cite{pan2019fuzzy} used TensorFlow) could all influence the empirical outcome of experiments. 
+While we only average over 10 runs compared to the 20 performed in the original paper, this should not have contributed to the performance discrepancy 
+given our low standard error between runs. We will contact the original author to address any implementation differences, 
+but further investigation into the plausible causes and further experimentation are required.
+
+Our second experiment reproduces the bound sensitivity experiment comparing FTA with different tiling bounds, 
+but also across different numbers of tiles. Our results share the conclusion that moderately small values for $u$ ($u \in {0.1, 1}$) 
+perform better than the extremes ($u \in {0.01, 10, 50, 100}$) \cite[]{pan2019fuzzy}. We also find that increasing the number of tiles 
+improves the performance of larger tiling bounds ($u \in {50, 100}$) while an extremely small $u$ gets worse ($u = 0.01$). This is expected, 
+as increasing the number of tiles given a large tiling bound reduces $\delta$, thereby reducing interference between bins. In addition, 
+increasing the number of tiles given an extremely small tiling bound greatly increases $delta$ and results in high interference between bins.
+
+To address the bound selection problem, we design normalizing experiments using $tanh$ activation and batch normalization. 
+\cite{pan2019fuzzy} mention that $tanh$ would not be an effective strategy for ensuring $z \in [l,u]$ given the gradient vanishing problem, 
+so we will provide empirical data to evaluate this hypothesis. With a principle focus of FTA being its ease of use, 
+we propose using batch normalization to automatically bound $z \in [l,u]$ without additional tuning.
+
+Lastly, we will reproduce the learning curves comparing FTA against ReLU for Acrobot, MountainCar, and Cartpole, 
+to investigate if our performance discrepancy exists in other environments.
 
 
 \newpage

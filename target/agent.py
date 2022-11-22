@@ -8,7 +8,7 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -16,13 +16,19 @@ class DQNetwork(nn.Module):
         self.n_actions = n_actions
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
-        self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+        if large_expansion_factor > 1:
+            self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims*large_expansion_factor)
+        else:    
+            self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         if type(activation).__name__ == "FTA":
             self.fc3 = nn.Linear(
                 self.fc2_dims * activation.expansion_factor, self.n_actions
             )  # need to increase layer size by number of bins
         else:
-            self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+            if large_expansion_factor > 1:
+                self.fc3 = nn.Linear(self.fc2_dims*large_expansion_factor, self.n_actions)
+            else:
+                self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
 
         with T.no_grad():
             nn.init.xavier_uniform_(self.fc1.weight)
@@ -68,11 +74,12 @@ class Agent:
         input_dims,
         batch_size,
         n_actions,
+        large_expansion_factor,
         activation,
         device,
 	    use_target,
         max_mem_size=100000,
-        eps_end=0.01,
+        eps_end=0.1,
         eps_dec=5e-5,
         seed=42,
     ):
@@ -87,18 +94,20 @@ class Agent:
         self.mem_cntr = 0
         self.eps_end = eps_end
         self.eps_dec = eps_dec
+        self.large_expansion_factor = large_expansion_factor
         self.activation = activation
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, activation).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, activation).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
+        
 
         self.optimizer = optim.Adam(self.QNetwork.parameters(), lr=self.lr)
         self.memory = ReplayMemory(self.mem_size)

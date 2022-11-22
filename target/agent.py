@@ -8,18 +8,20 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, activation: FTA):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
+        self.normalizer = normalizer
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         if large_expansion_factor > 1:
             self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims*large_expansion_factor)
         else:    
             self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+
         if type(activation).__name__ == "FTA":
             self.fc3 = nn.Linear(
                 self.fc2_dims * activation.expansion_factor, self.n_actions
@@ -29,6 +31,7 @@ class DQNetwork(nn.Module):
                 self.fc3 = nn.Linear(self.fc2_dims*large_expansion_factor, self.n_actions)
             else:
                 self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+    
 
         with T.no_grad():
             nn.init.xavier_uniform_(self.fc1.weight)
@@ -42,7 +45,16 @@ class DQNetwork(nn.Module):
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-        x = self.activation(self.fc2(x))  # FTA(x*W2 + b2)
+        if self.normalizer == "tanh":
+            x = self.fc2(x)
+            x = self.activation(F.tanh(x)) #tanh on input layer to FTA
+        elif self.normalizer == "batchnorm": 
+            x = self.fc2(x)
+            x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]
+            x -= 1 # shifts range to between [-1,1] 
+            x = self.activation(x)
+        else: 
+            x = self.activation(self.fc2(x))
         actions = self.fc3(
             x
         )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
@@ -75,6 +87,7 @@ class Agent:
         batch_size,
         n_actions,
         large_expansion_factor,
+        normalizer,
         activation,
         device,
 	    use_target,
@@ -95,16 +108,17 @@ class Agent:
         self.eps_end = eps_end
         self.eps_dec = eps_dec
         self.large_expansion_factor = large_expansion_factor
+        self.normalizer = normalizer
         self.activation = activation
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, activation).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, activation).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, activation).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, activation).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
         

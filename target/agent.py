@@ -47,7 +47,7 @@ class DQNetwork(nn.Module):
         x = F.relu(self.fc1(state))
         if self.normalizer == "tanh":
             x = self.fc2(x)
-            x = self.activation(F.tanh(x)) #tanh on input layer to FTA
+            x = self.activation(T.tanh(x)) #tanh on input layer to FTA
         elif self.normalizer == "rangenorm": 
             x = self.fc2(x)
             x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]

@@ -33,8 +33,8 @@ def evaluation(agent, seed=1):
         if done or truncated:
             return score
 
-def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1, _fta_upper_limit = 1, 
-        _fta_delta = 0.1, _fta_eta = 0.1, _device="cuda:0"):
+def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -100, _fta_upper_limit = 100, 
+        _fta_delta = 10, _fta_eta = 10, _device="cuda:0"):
     env = gym.make("LunarLander-v2")
     
     for run_c in range(20):
@@ -50,10 +50,10 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
     # Multi-test run
         if run_c >= 10:
             run_i = run_c%10
-            _normalizer = "tanh"
+            _normalizer = "rangenorm"
         else:
             run_i = run_c
-            _normalizer = "rangenorm"
+            _normalizer = "tanh"
         
         # Agent init
         _gamma = 0.99

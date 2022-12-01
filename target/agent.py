@@ -8,13 +8,14 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, activation: FTA):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, scaling, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.normalizer = normalizer
+        self.scaling = scaling #scaling = abs(u-l)
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         if large_expansion_factor > 1:
@@ -47,11 +48,12 @@ class DQNetwork(nn.Module):
         x = F.relu(self.fc1(state))
         if self.normalizer == "tanh":
             x = self.fc2(x)
-            x = self.activation(T.tanh(x)) #tanh on input layer to FTA
+            x = T.tanh(x)*(self.scaling/2) #scaling factor
+            x = self.activation(x) #tanh on input layer to FTA
         elif self.normalizer == "rangenorm": 
             x = self.fc2(x)
-            x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]
-            x -= 1 #values now between [-1,1]
+            x = ((x - x.min())/(x.max() - x.min()))*(self.scaling) # values now between [0,scaling factor]
+            x -= (self.scaling/2) #values now between [-scaling/2,scaling/2]
             x = self.activation(x)
         else: 
             x = self.activation(self.fc2(x))
@@ -88,6 +90,7 @@ class Agent:
         n_actions,
         large_expansion_factor,
         normalizer,
+        scaling,
         activation,
         device,
 	    use_target,
@@ -109,16 +112,17 @@ class Agent:
         self.eps_dec = eps_dec
         self.large_expansion_factor = large_expansion_factor
         self.normalizer = normalizer
+        self.scaling = scaling
         self.activation = activation
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, activation).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, scaling, activation).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, activation).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, scaling, activation).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
         

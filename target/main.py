@@ -65,6 +65,7 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
         _lr = 0.0001
         _seed = run_i*10
         _large_expansion_factor = 0 #THIS IS FOR -20,20 initial comparison between FTA and DQN-LARGE, k = expansion factor = 20
+        _scaling = abs(_fta_upper_limit - _fta_lower_limit) # abs(u-l)
         agent = Agent(
             gamma=_gamma,
             epsilon=_epsilon,
@@ -72,6 +73,7 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
             n_actions=_n_actions,
             large_expansion_factor = _large_expansion_factor,
             normalizer = _normalizer,
+            scaling = _scaling,
             activation=_activation,
             device=_device,
             use_target = _use_target,

@@ -245,13 +245,13 @@ The state space of the environment $\cS$ is compromised of 8 attributes; $x$ and
 In our experiments, we use Deep Q-Learning (DQN) \cite[]{mnih2013playing}. As explained in section \ref{sub-sec:reinforcement}, the goal of the agent is to interact with the environment in a way that maximizes its expected reward.
 
 the optimial action value function under policy $\pi$ is defined as:
-$$Q^*(s, a) = \mathbf max_\pi{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
+$$Q^*(s, a) = \mathbf \max_{\pi}\mathbf{E}[G_t|S_t =s, A_t=a; A_{t+1: \infty} \sim \pi]$$
 
 In Q-Learning action value function is iteratively updated by using Bellman equation to converge to the optimal action value function:
-$$Q_{t+1}(s, a) = E[r + \gamma max_{a_{t+1}} Q_t(s_{t+1}, a_{t+1})|S_t =s, A_t=a]$$
+$$Q_{t+1}(s, a) = \mathbf{E}[r + \gamma \max_{a_{t+1}} Q_t(s_{t+1}, a_{t+1})|S_t =s, A_t=a]$$
 This converges to optimal action value function, $Q_t \rightarrow Q^*, t \rightarrow \infty$. A neural network is used as function approximator with weights $\theta$ to estimate action value function, $Q(s, a; \theta) \approx Q^*(s, a)$, and it is trained by minimizing the loss function, that changes by each iteration $i$:
-$$L_i(\theta_i) = E_{s, a\sim p(.)}\big[(y_i - Q(s, a; \theta_i))^2\big],$$
-Where $y_i = E_{s^\prime\sim\varepsilon}[r + \gamma max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1}) | s, a]$
+$$L_i(\theta_i) = \mathbf{E}_{s, a\sim \rho(.)}\big[(y_i - Q(s, a; \theta_i))^2\big],$$
+Where $y_i = \mathbf{E}_{s^\prime\sim\varepsilon}[r + \gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1}) | s, a]$. The loss is computed by taking the expectation over the state-action pairs, $s, a$, that are sampled from the current $\mathit{behavior\ policy}$ $\rho(s, a)$. The expected value of the squared difference between the target value $y_i$ and the predicted action-value $Q(s, a; \theta_i)$ is then computed. The target value $y_i$ is a measure of the long-term rewards that can be obtained by taking a given action in a given state. It is computed by taking the expected value of the sum of the immediate reward $r$ and the discounted future rewards $\gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1})$, where $s^\prime$ is a future state that is obtained by taking action $a$ in state $s$, and $a^\prime$ is the action that maximizes the expected future rewards. The expectation is taken over the distribution of future states $s^\prime$ obtained by sampling from the environment with some probability $\varepsilon$.
 
 Agent's experience at each timestep is stored into a $replay\ memory$, a random minibatch of expriences are samepled randomly from this memory to calculate the loss function, and the neural network is trained by performing a gradient descent on the loss function.
 

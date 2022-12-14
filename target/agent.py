@@ -8,12 +8,14 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA, normalizer, fta_upper_limit):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
+        self.normalizer = normalizer
+        self.fta_upper_limit = fta_upper_limit
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
@@ -33,10 +35,26 @@ class DQNetwork(nn.Module):
             nn.init.zeros_(self.fc3.bias)        
 
         self.activation = activation
+        self.bn = nn.BatchNorm1d(self.fc2_dims)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-        x = self.activation(self.fc2(x))  # FTA(x*W2 + b2)
+
+        if self.normalizer == "tanh":
+            x = self.fc2(x)
+            x = self.activation(F.tanh(x) * self.fta_upper_limit) #tanh on input layer to FTA
+        elif self.normalizer == "rangenorm": 
+            x = self.fc2(x)
+            x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]
+            x -= 1 #values now between [-1,1]
+            x = self.activation(x * self.fta_upper_limit)
+        elif self.normalizer == "batchnorm":
+            x = self.fc2(x)
+            x = self.bn(x)
+            x = self.activation(x)
+        else: 
+            x = self.activation(self.fc2(x))
+
         actions = self.fc3(
             x
         )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
@@ -69,6 +87,8 @@ class Agent:
         batch_size,
         n_actions,
         activation,
+        normalizer,
+        fta_upper_limit,
         device,
 	    use_target,
         max_mem_size=100000,
@@ -89,15 +109,16 @@ class Agent:
         self.eps_end = eps_end
         self.eps_dec = eps_dec
         self.activation = activation
+        self.normalizer = normalizer
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation, normalizer, fta_upper_limit).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation, normalizer, fta_upper_limit).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
 

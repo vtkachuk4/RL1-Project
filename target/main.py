@@ -15,8 +15,8 @@ RANDOM_NUMBER = np.random.randint(1, 100)
 def create_checkpoint():
     pass
 
-def evaluation(agent, seed=1):
-    env = gym.make("CartPole-v1")
+def evaluation(agent, _env, seed=1):
+    env = gym.make(_env)
     observation = env.reset()
     state = T.tensor(np.asarray([observation[0]]), device=agent.device)
     score = 0
@@ -33,7 +33,7 @@ def evaluation(agent, seed=1):
         if done or truncated:
             return score
 
-def main(run_i=0, _use_target = False, activation = "fta", _env = "CartPole-v1",
+def main(run_i=0, _use_target = False, activation = "fta", _env = "LunarLander-v2", _normalizer=None,
         _fta_lower_limit = -20, _fta_upper_limit = 20, _fta_delta = 2, _fta_eta = 2, _device="cuda:0"):
     env = gym.make(_env)
 
@@ -65,6 +65,8 @@ def main(run_i=0, _use_target = False, activation = "fta", _env = "CartPole-v1",
         batch_size=_batch_size,
         n_actions=_n_actions,
         activation=_activation,
+        normalizer = _normalizer,
+        fta_upper_limit=_fta_upper_limit,
         device=_device,
         use_target = _use_target,
         eps_end=_eps_end,
@@ -76,7 +78,10 @@ def main(run_i=0, _use_target = False, activation = "fta", _env = "CartPole-v1",
     # data collection and initialization
     # run from root folder!
     if activation == "fta":
-        output_name = f"data/{activation}_t{_use_target}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
+        if _normalizer:
+            output_name = f"data/{activation}_t{_use_target}_n{_normalizer}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv"
+        else:
+            output_name = f"data/{activation}_t{_use_target}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
     else:
         output_name = f"data/{activation}_t{_use_target}_l{_lr}_{run_i}.csv"
     with open(output_name, 'w+', newline = '') as csvfile:

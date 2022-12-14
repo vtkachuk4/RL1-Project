@@ -47,14 +47,18 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
             print("Please specify a valid activation: fta or relu")
             return
 
-    # Multi-test run
-        if run_c >= 10:
-            run_i = run_c%10
-            _normalizer = "rangenorm"
-        else:
-            run_i = run_c
-            _normalizer = "tanh"
-        
+        # Activation params
+        if activation == "fta":
+            _activation = FTA(_fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta)
+        elif activation == "relu":
+            _activation = relu
+        else: 
+            print("Please specify a valid activation: fta or relu")
+            return
+
+        # Multi-test run
+        run_i = run_c + 10
+
         # Agent init
         _gamma = 0.99
         _epsilon = 0.1
@@ -86,15 +90,15 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
         # data collection and initialization
         # run from root folder!
         if activation == "fta":
-            output_name = f"data/{activation}_t{_use_target}_n{_normalizer}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
+            output_name = f"data/{activation}_t{_use_target}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
         else:
             output_name = f"data/{activation}_t{_use_target}_l{_lr}_{run_i}.csv"
         with open(output_name, 'w+', newline = '') as csvfile:
             logger = csv.writer(csvfile, delimiter=',', quoting=csv.QUOTE_MINIMAL)
             logger.writerow(["fta params:","lower","upper","delta","eta"])
             logger.writerow(["", str(_fta_lower_limit), str(_fta_upper_limit), str(_fta_delta), str(_fta_eta)])
-            logger.writerow(["agent params:","gamma","epsilon","batch_size","n_actions","eps_end","input_dims","lr","seed"])
-            logger.writerow(["", str(_gamma), str(_epsilon), str(_batch_size), str(_n_actions), str(_eps_end), str(_input_dims), str(_lr), str(_seed)])
+            logger.writerow(["agent params:","gamma","epsilon","batch_size","n_actions","eps_end","use_target","input_dims","lr","seed"])
+            logger.writerow(["", str(_gamma), str(_epsilon), str(_batch_size), str(_n_actions), str(_eps_end), str(_use_target), str(_input_dims), str(_lr), str(_seed)])
             logger.writerow(["Performance logging begins:"])
             logger.writerow(["Episode","Step","Score"])
 

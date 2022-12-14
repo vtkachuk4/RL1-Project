@@ -83,6 +83,7 @@ class Agent:
         self.input_dims = input_dims
         self.batch_size = batch_size
         self.action_space = [i for i in range(n_actions)]
+        self.n_actions = n_actions
         self.mem_size = max_mem_size
         self.mem_cntr = 0
         self.eps_end = eps_end
@@ -110,7 +111,7 @@ class Agent:
             with T.no_grad():
                 return self.QNetwork(state).max(1)[1].view(1, 1)
         else:
-            return T.tensor([[random.randrange(4)]], device=self.device, dtype=T.int64)
+            return T.tensor([[random.randrange(self.n_actions)]], device=self.device, dtype=T.int64)
 
     def learn(self):
         if len(self.memory) < self.batch_size:

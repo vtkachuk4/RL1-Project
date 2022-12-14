@@ -9,7 +9,7 @@ if __name__ == "__main__":
 
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [10,50,100],
+        "fta_upper_limit": [0.01,1,100],
         "num_tiles": [20]
         # "fta_upper_limit": [20],
         # "num_tiles": [20]

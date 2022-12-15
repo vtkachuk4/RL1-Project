@@ -137,7 +137,7 @@ class Agent:
             with T.no_grad():
                 return self.QNetwork(state).max(1)[1].view(1, 1)
         else:
-            return T.tensor([[random.randrange(4)]], device=self.device, dtype=T.int64)
+            return T.tensor([[random.randrange(2)]], device=self.device, dtype=T.int64) #T.tensor([[random.randrange(4)]], device=self.device, dtype=T.int64)
 
     def learn(self):
         if len(self.memory) < self.batch_size:

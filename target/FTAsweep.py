@@ -3,13 +3,16 @@ from functools import partial
 from main import main
 
 if __name__ == "__main__":
-    device = "cuda:2"
+    device = "cuda:3"
     activation = 'fta'
     use_target = False
+    env = "CartPole-v1"
+    # env = "LunarLander-v2"
+    normalizer="tanh"
 
     fta_params_dict = {
         # "fta_upper_limit": [0.05, 0.1, 0.25, 0.5, 1, 2, 4, 8],
-        "fta_upper_limit": [10,50,100],
+        "fta_upper_limit": [0.01, 1],
         "num_tiles": [20]
         # "fta_upper_limit": [20],
         # "num_tiles": [20]
@@ -35,9 +38,11 @@ if __name__ == "__main__":
             runs = [i for i in range(num_runs)]
             main_i = partial(main, _use_target = use_target,
                                     activation = activation, 
+                                    _env = env,
+                                    _normalizer = normalizer,
                                     _fta_lower_limit = _fta_lower_limit, 
                                     _fta_upper_limit = _fta_upper_limit, 
-                                    _fta_delta = _fta_delta, 
+                                    _fta_delta = _fta_delta,
                                     _fta_eta = _fta_eta,
                                     _device = device)
             

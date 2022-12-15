@@ -15,8 +15,8 @@ RANDOM_NUMBER = np.random.randint(1, 100)
 def create_checkpoint():
     pass
 
-def evaluation(agent, seed=1):
-    env = gym.make("LunarLander-v2")
+def evaluation(agent, _env, seed=1):
+    env = gym.make(_env)
     observation = env.reset()
     state = T.tensor(np.asarray([observation[0]]), device=agent.device)
     score = 0
@@ -33,20 +33,11 @@ def evaluation(agent, seed=1):
         if done or truncated:
             return score
 
-def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1, _fta_upper_limit = 1, 
-        _fta_delta = 0.1, _fta_eta = 0.1, _normalizer = "tanh", _device="cuda:0"):
-    env = gym.make("Cartpole-v1") #gym.make("LunarLander-v2")
+def main(run_i=0, _use_target = False, activation = "fta", _env = "LunarLander-v2", _normalizer="tanh",
+        _fta_lower_limit = -1, _fta_upper_limit = 1, _fta_delta = 0.1, _fta_eta = 0.1, _device="cuda:0"):
+    env = gym.make(_env)
     
     for run_c in range(20):
-        # Activation params
-        if activation == "fta":
-            _activation = FTA(_fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta)
-        elif activation == "relu":
-            _activation = relu
-        else: 
-            print("Please specify a valid activation: fta or relu")
-            return
-
         # Activation params
         if activation == "fta":
             _activation = FTA(_fta_lower_limit, _fta_upper_limit, _fta_delta, _fta_eta)
@@ -63,22 +54,25 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
         _gamma = 0.99
         _epsilon = 0.1
         _batch_size = 64
-        _n_actions = 2 #4
+        if _env == "CartPole-v1":
+            _n_actions = 2
+            _input_dims = 4
+        elif _env == "LunarLander-v2":
+            _n_actions = 4
+            _input_dims = 8
         _eps_end = 0.1
-        _input_dims = 4 #8
         _lr = 0.0001
         _seed = run_i*10
         _large_expansion_factor = 0 #THIS IS FOR -20,20 initial comparison between FTA and DQN-LARGE, k = expansion factor = 20
-        _scaling = abs(_fta_upper_limit - _fta_lower_limit) # abs(u-l)
         agent = Agent(
             gamma=_gamma,
             epsilon=_epsilon,
             batch_size=_batch_size,
             n_actions=_n_actions,
             large_expansion_factor = _large_expansion_factor,
-            normalizer = _normalizer,
-            scaling = _scaling,
             activation=_activation,
+            normalizer = _normalizer,
+            fta_upper_limit=_fta_upper_limit,
             device=_device,
             use_target = _use_target,
             eps_end=_eps_end,
@@ -90,7 +84,10 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
         # data collection and initialization
         # run from root folder!
         if activation == "fta":
-            output_name = f"data/{activation}_t{_use_target}_n{_normalizer}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
+            if _normalizer:
+                output_name = f"data/{activation}_t{_use_target}_n{_normalizer}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv"
+            else:
+                output_name = f"data/{activation}_t{_use_target}_u{_fta_upper_limit}_d{_fta_delta}_l{_lr}_{run_i}.csv" 
         else:
             output_name = f"data/{activation}_t{_use_target}_l{_lr}_{run_i}.csv"
         with open(output_name, 'w+', newline = '') as csvfile:
@@ -134,7 +131,7 @@ def main(run_i=0, _use_target = False, activation = "fta", _fta_lower_limit = -1
                     if total_timesteps % 1000 == 0:
                         if agent.use_target:
                             agent.targetNetwork.load_state_dict(agent.QNetwork.state_dict())
-                        policy_score = evaluation(agent)
+                        policy_score = evaluation(agent, _env)
                         # if policy_score > 200:
                         #     T.save(agent.QNetwork.state_dict(), f"model{policy_score:.2f}.pth")
                         # print(f"greedy evaluation: {policy_score:.2f}")

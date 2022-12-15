@@ -8,14 +8,14 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, scaling, activation: FTA):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
         self.n_actions = n_actions
         self.normalizer = normalizer
-        self.scaling = scaling #scaling = abs(u-l)
+        self.fta_upper_limit = fta_upper_limit
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
         if large_expansion_factor > 1:
@@ -43,20 +43,25 @@ class DQNetwork(nn.Module):
             nn.init.zeros_(self.fc3.bias)        
 
         self.activation = activation
+        self.bn = nn.BatchNorm1d(self.fc2_dims)
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
         if self.normalizer == "tanh":
             x = self.fc2(x)
-            x = T.tanh(x)*(self.scaling/2) #scaling factor
-            x = self.activation(x) #tanh on input layer to FTA
+            x = self.activation(T.tanh(x) * self.fta_upper_limit) #tanh on input layer to FTA
         elif self.normalizer == "rangenorm": 
             x = self.fc2(x)
-            x = ((x - x.min())/(x.max() - x.min()))*(self.scaling) # values now between [0,scaling factor]
-            x -= (self.scaling/2) #values now between [-scaling/2,scaling/2]
+            x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]
+            x -= 1 #values now between [-1,1]
+            x = self.activation(x * self.fta_upper_limit)
+        elif self.normalizer == "batchnorm":
+            x = self.fc2(x)
+            x = self.bn(x)
             x = self.activation(x)
         else: 
             x = self.activation(self.fc2(x))
+
         actions = self.fc3(
             x
         )  # don't want to activate it because we want raw estimate. Value estimates should indeed be negative
@@ -90,10 +95,10 @@ class Agent:
         n_actions,
         large_expansion_factor,
         normalizer,
-        scaling,
         activation,
+        fta_upper_limit,
         device,
-	    use_target,
+        use_target,
         max_mem_size=100000,
         eps_end=0.1,
         eps_dec=5e-5,
@@ -106,23 +111,23 @@ class Agent:
         self.input_dims = input_dims
         self.batch_size = batch_size
         self.action_space = [i for i in range(n_actions)]
+        self.n_actions = n_actions
         self.mem_size = max_mem_size
         self.mem_cntr = 0
         self.eps_end = eps_end
         self.eps_dec = eps_dec
         self.large_expansion_factor = large_expansion_factor
-        self.normalizer = normalizer
-        self.scaling = scaling
+        self.normalizer = normalizer     
         self.activation = activation
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, scaling, activation).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, scaling, activation).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
         
@@ -137,7 +142,7 @@ class Agent:
             with T.no_grad():
                 return self.QNetwork(state).max(1)[1].view(1, 1)
         else:
-            return T.tensor([[random.randrange(2)]], device=self.device, dtype=T.int64) #T.tensor([[random.randrange(4)]], device=self.device, dtype=T.int64)
+            return T.tensor([[random.randrange(self.n_actions)]], device=self.device, dtype=T.int64)
 
     def learn(self):
         if len(self.memory) < self.batch_size:

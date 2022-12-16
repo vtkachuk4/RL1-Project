@@ -8,7 +8,7 @@ from collections import namedtuple, deque
 from FTA import FTA
 
 class DQNetwork(nn.Module):
-    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, activation: FTA, normalizer, fta_upper_limit):
+    def __init__(self, input_dims, fc1_dims, fc2_dims, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation: FTA):
         super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
@@ -18,13 +18,21 @@ class DQNetwork(nn.Module):
         self.fta_upper_limit = fta_upper_limit
 
         self.fc1 = nn.Linear(self.input_dims, self.fc1_dims)
-        self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+        if large_expansion_factor > 1:
+            self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims*large_expansion_factor)
+        else:    
+            self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
+
         if type(activation).__name__ == "FTA":
             self.fc3 = nn.Linear(
                 self.fc2_dims * activation.expansion_factor, self.n_actions
             )  # need to increase layer size by number of bins
         else:
-            self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+            if large_expansion_factor > 1:
+                self.fc3 = nn.Linear(self.fc2_dims*large_expansion_factor, self.n_actions)
+            else:
+                self.fc3 = nn.Linear(self.fc2_dims, self.n_actions)
+    
 
         with T.no_grad():
             nn.init.xavier_uniform_(self.fc1.weight)
@@ -39,10 +47,9 @@ class DQNetwork(nn.Module):
 
     def forward(self, state):
         x = F.relu(self.fc1(state))
-
         if self.normalizer == "tanh":
             x = self.fc2(x)
-            x = self.activation(F.tanh(x) * self.fta_upper_limit) #tanh on input layer to FTA
+            x = self.activation(T.tanh(x) * self.fta_upper_limit) #tanh on input layer to FTA
         elif self.normalizer == "rangenorm": 
             x = self.fc2(x)
             x = ((x - x.min())/(x.max() - x.min()))*2 # values now between [0,2]
@@ -86,13 +93,14 @@ class Agent:
         input_dims,
         batch_size,
         n_actions,
-        activation,
+        large_expansion_factor,
         normalizer,
+        activation,
         fta_upper_limit,
         device,
-	    use_target,
+        use_target,
         max_mem_size=100000,
-        eps_end=0.01,
+        eps_end=0.1,
         eps_dec=5e-5,
         seed=42,
     ):
@@ -108,19 +116,21 @@ class Agent:
         self.mem_cntr = 0
         self.eps_end = eps_end
         self.eps_dec = eps_dec
+        self.large_expansion_factor = large_expansion_factor
+        self.normalizer = normalizer     
         self.activation = activation
-        self.normalizer = normalizer
 
         T.manual_seed(seed)
 
         # self.device = T.device("cuda" if T.cuda.is_available() else "cpu")
         self.device = T.device(device)
-        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation, normalizer, fta_upper_limit).to(self.device)
+        self.QNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation).to(self.device)
         self.use_target = use_target
         if self.use_target:
-            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, activation, normalizer, fta_upper_limit).to(self.device)
+            self.targetNetwork = DQNetwork(input_dims, 64, 64, n_actions, large_expansion_factor, normalizer, fta_upper_limit, activation).to(self.device)
             self.targetNetwork.load_state_dict(self.QNetwork.state_dict())
             self.targetNetwork.eval()
+        
 
         self.optimizer = optim.Adam(self.QNetwork.parameters(), lr=self.lr)
         self.memory = ReplayMemory(self.mem_size)

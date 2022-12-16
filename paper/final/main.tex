@@ -278,8 +278,6 @@ The agents behaviour policy is an $\epsilon$-greedy policy, which takes a random
 The LunarLander environment, from OpenAI Gym \cite[]{brockman2016gym} is a trajectory rocket optimization problem, where the goal is to land a moon lander on a landing pad.
 The state space of the environment $\cS$ is compromised of 8 attributes; $x$ and $y$ coordinates, $v_x$ and $v_y$ horizontal and vertical velocities, $\theta$ and $v_\theta$ angle and angular velocity, and 2 booleans to show if the left or right leg is touching the ground. At each timestep $t$ the action space $\cA(s_t) = \tt\{do\ nothing,\ fire\ left\ engine,\ fire\ main\ engine,\ fire\ right\ engine\}$. The rewards for landing on the landing pad is between 100 to 140 points, with an additional 100 points if it stops on it, hence a solved episode is +200 points. Firing the main engine has -0.3 and the side engines -0.03 points penalty, and the lander gets -100 points if it crashes. In the event that the agent crashes, leaves the viewport, or remains stationary without touching another body, the episode will terminate.
 
-The CartPole environment is a classic control problem from the OpenAI Gym \cite[]{brockman2016gym} where a pole is attached to a cart that can move along a frictionless track. The goal is to balance the pole by moving the cart back and forth so that it stays upright. The state of the environment is represented by four values: the position and velocity of the cart, and the angle and angular velocity of the pole. The goal of the agent is to balance the pole by moving the cart to left or right. Hence, at each timestep $t$ the action space $\cA(s_t) = \tt\{move\ left,\ move\ right\}$. The Reward for each timestep is +1 and the environment is considered solved if the pole remains upright for a certain number of time steps, without falling over or the cart moving too far from the center of the track.
-
 
 \subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
 Following the same settings as in \cite{pan2019fuzzy}, we use a two-layer neural network with different acivation function in the last hidden layer as the main difference. For DQN and DQN-Large, we use ReLU activation function in all the layers, with the exception of the last layer which is linear.
@@ -388,7 +386,7 @@ All other parameters and configurations are kept the same as those in section \r
     \label{fig:bnvtanh}
 \end{figure}
 
-Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. We observe improvement over DQN-FTA with the worst tiling bounds, when $tanh$ is used as the preceding layer to FTA. On the other hand, Range Normalization performs poorly, and the performance gets worse with all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small.
+Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. We observe good performance with all the tiling bounds and significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$, when $tanh$ is used as the preceding layer to FTA to normalize its inputs. On the other hand, Range Normalization performs poorly, and the performance gets worse with all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small. Overall, it is apparent that $tanh$ normalization is effective, irrespective of the tiling bound in the LunarLander environment.
 
 
 \subsubsection{Cartpole}
@@ -398,12 +396,12 @@ The state space of the CartPole environment contains four values: cart position.
 The action space is: push cart left, and push cart right.
 Since the goal is to keep the pole from falling a reward of $1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
 
-\begin{figure}[h]
-    \centering
-    \includegraphics[width=10cm]{cartpole.png}
-    \caption{DQN-FTA without target network vs DQN-FTA-tanh in CartPole}
-    \label{fig:cartpole}
-\end{figure}
+% \begin{figure}[h]
+%     \centering
+%     \includegraphics[width=10cm]{cartpole.png}
+%     \caption{DQN-FTA without target network vs DQN-FTA-tanh in CartPole}
+%     \label{fig:cartpole}
+% \end{figure}
 
 
 We first tested to see how DQN-FTA without a target network performs with three different tiling bounds ($u=0.01, 1, 100$) and $k=20$.

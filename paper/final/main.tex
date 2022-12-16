@@ -396,12 +396,12 @@ The state space of the CartPole environment contains four values: cart position.
 The action space is: push cart left, and push cart right.
 Since the goal is to keep the pole from falling a reward of $1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
 
-% \begin{figure}[h]
-%     \centering
-%     \includegraphics[width=10cm]{cartpole.png}
-%     \caption{DQN-FTA without target network vs DQN-FTA-tanh in CartPole}
-%     \label{fig:cartpole}
-% \end{figure}
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{cartpole.png}
+    \caption{DQN-FTA without target network vs DQN-FTA-tanh in CartPole}
+    \label{fig:cartpole}
+\end{figure}
 
 
 We first tested to see how DQN-FTA without a target network performs with three different tiling bounds ($u=0.01, 1, 100$) and $k=20$.
@@ -410,8 +410,8 @@ Unlike in LunarLander, a tiling bound of $u=100$ performs best, while $u=1$ perf
 
 We next tested to see if applying $tanh$ normalization before the FTA layer can improve the performance of $u=0.01, 1$ to be similar to that of $u=100$.
 The right plot in Figure \ref{fig:cartpole} illustrates that indeed, applying $tanh$ normaliztion caused for DQN-FTA to perform similar for all the tiling bounds we tested ($u=0.01, 1, 100$).
-Further, we noticed that the performance with $tanh$ for all the tiling bounds is even better than it was without it for $u=100$.
-This might indicate that the optimal tiling bound is not $u=100$ and $tanh$ was able to apply the appropriate normalization to find it.
+% Further, we noticed that the performance with $tanh$ for all the tiling bounds is even better than it was without it for $u=100$.
+% This might indicate that the optimal tiling bound is not $u=100$ and $tanh$ was able to apply the appropriate normalization to find it.
 Thus, the experimental results in the CartPole environment further confirm that using $tanh$ normalization before an FTA layer can indeed remove the need for tuning the tiling bound $u$.
 
 

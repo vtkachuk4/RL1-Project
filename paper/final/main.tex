@@ -110,7 +110,7 @@
   In this work we do two things.
   First, we reproduce experiments comparing FTA with ReLU when using deep Q-learning (DQN) on the LunarLander RL environment, showing that indeed, for this environment FTA is no better than ReLU if the tiling bound is not set appropriately.
   Second, we empirically test if simple techniques for normalizing the activation values passed into the FTA cell can remove the need for search when setting the tiling bound.
-  Our experiments indicate that normalizing via tanh activation is most effective.
+  Our experiments indicate that normalizing via tanh activation is most effective and can possibly remove the need for search to set the tiling bound.
 
 
 \end{abstract}
@@ -151,16 +151,17 @@ The sensitivity to the tiling bound was especially prominant in the work of \cit
 As such, in this work we aim to do two things:
 \begin{enumerate}
   \item We aim to reproduce the FTA vs ReLU using DQN in LunarLander experiments presented in \cite[]{pan2019fuzzy}, to confirm that indeed FTA is sensitive to the tiling bound in this setting.
-  \item Next, we aim to test if the simple technique of normalizing the values (using $\tanh$, or batch norm) passed to FTA can remove the need for tuning the tiling bound parameter in FTA.
+  \item Next, we aim to test if the simple technique of normalizing the values (using $\tanh$, batch norm, or range norm) passed to FTA can remove the need for tuning the tiling bound parameter in FTA.
 \end{enumerate}
 
-Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}.
+Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}, indicating that the experiments were reproducable and nearly identical results were obtained as in \cite[]{pan2019fuzzy}.
 
-To answer the question in the second point we normalize the values passed into FTA using two methods: passing them into a $\tanh$, and using batch norm.
+To answer the question in the second point we normalize the values passed into FTA using three methods: passing them into a $\tanh$, using batch norm, and using range norm (all to be defined in Section \ref{sub-sec:normalize experiments}).
 The method of using $tanh$ to normalize the input values was discussed in \cite{pan2019fuzzy}, but not tested.
-\cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients, which we hope to confirm from this experiment.
-We hypothesis that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that then values passed into FTA are in $[-1, 1]$, thus the tiling bound can always be set to $[-1, 1]$.
-Experiments related to the second point are shown in section \ref{sub-sec:normalize experiments}.
+\cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients, however we did not see any indications of this in our experiments, and obtained very positive results for $tanh$.
+We hypothesis that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that the values passed into FTA are in $[-1, 1]$, thus the tiling bound can always be set to $[-1, 1]$.
+We found that $tanh$ was most effective, while batch norm and range norm did not perform as well.
+Experiments highlighting these results are shown in Section \ref{sub-sec:normalize experiments}.
 
 
 \subsection{Related Work} \label{sub-sec:related work}
@@ -278,10 +279,16 @@ The agents behaviour policy is an $\epsilon$-greedy policy, which takes a random
 The LunarLander environment, from OpenAI Gym \cite[]{brockman2016gym} is a trajectory rocket optimization problem, where the goal is to land a moon lander on a landing pad.
 The state space of the environment $\cS$ is compromised of 8 attributes; $x$ and $y$ coordinates, $v_x$ and $v_y$ horizontal and vertical velocities, $\theta$ and $v_\theta$ angle and angular velocity, and 2 booleans to show if the left or right leg is touching the ground. At each timestep $t$ the action space $\cA(s_t) = \tt\{do\ nothing,\ fire\ left\ engine,\ fire\ main\ engine,\ fire\ right\ engine\}$. The rewards for landing on the landing pad is between 100 to 140 points, with an additional 100 points if it stops on it, hence a solved episode is +200 points. Firing the main engine has -0.3 and the side engines -0.03 points penalty, and the lander gets -100 points if it crashes. In the event that the agent crashes, leaves the viewport, or remains stationary without touching another body, the episode will terminate.
 
+We use a student's t-distribution to display $95\%$ confidence intervals for all of the plots in this section. 
+The confidence intervals appear as the shaded regions in the plots.
+The validity of using such confidence intervals is investigated in Section \ref{sub-sec:distribution}.
+
 
 \subsection{Reproducibility Experiment} \label{sub-sec:reproduc experiments}
-Following the same settings as in \cite{pan2019fuzzy}, we use a two-layer neural network with different acivation function in the last hidden layer as the main difference. For DQN and DQN-Large, we use ReLU activation function in all the layers, with the exception of the last layer which is linear.
-Since DQN with FTA activation function expands the number of features, its last hidden layer is $k = (l-u)/\delta$ times bigger than the DQN, Hence we use DQN-Large with the last hidden layer of the same size of DQN-FTA with and without the target network.
+Following the same settings as in \cite{pan2019fuzzy}, we use a two-layer neural network with a different acivation function in the last hidden layer as the main difference. 
+For DQN and DQN-Large, we use ReLU activation function in all the layers, with the exception of the last layer which is linear.
+Since DQN with FTA activation function expands the number of features, its last hidden layer is $k = (l-u)/\delta$ times bigger than the DQN, 
+hence we use DQN-Large with the last hidden layer of the same size of DQN-FTA with and without the target network.
 
 For DQN-FTA in the last layer we set $[l, u] = [-20, 20]$ and $\eta = \delta = 2.0$, hence $k = 40/2 = 20$.
 
@@ -289,20 +296,23 @@ For DQN-FTA in the last layer we set $[l, u] = [-20, 20]$ and $\eta = \delta = 2
 \begin{figure}[h]
     \centering
     \includegraphics[height=4cm]{ftavrelu.png}
-    \caption{Evaluation learning curves of {\bf DQN-FTA(black)}, {\textcolor{red} {\bf DQN(red)}} and {\textcolor{blue} {\bf DQN-Large(blue)} }. The {\bf dotted} line shows the algorithms trained with target network. The results are averaged over 10 runs, with shaded area showing the standard error.}
+    \caption{Evaluation learning curves of {\bf DQN-FTA(black)}, {\textcolor{red} {\bf DQN(red)}} and {\textcolor{blue} {\bf DQN-Large(blue)} }. 
+    The {\bf dotted} line shows the algorithms trained with target network. The results are averaged over 10 runs.}
     \label{fig:ftavrelu}
 \end{figure}
 
 
-
 In figure \ref{fig:ftavrelu}, we observe that, while DQN-FTA with and without the target network performs slightly better than DQN, DQN-Large outperforms both DQN and DQN-FTA.
+This is the same behaviour that was observed by \cite[]{pan2019fuzzy} for this experiment, thus we were able to reprodue the experiment.
 
-To show the sensitivity of DQN-FTA to the tiling bounds, we repeat the experiment for DQN-FTA only, with different values of $u \in \{0.1,1,10,50,100\}, l = -u$ with different number of tiles $k \in \{16, 24, 128\}$ for each tiling bounds.
+To show the sensitivity of DQN-FTA to the tiling bounds, we repeat the experiment for DQN-FTA only, with different values of $u \in \{0.1,1,10,50,100\}, 
+l = -u$ with different number of tiles $k \in \{16, 24, 128\}$ for each tiling bounds.
 
 \begin{figure}[h]
     \centering
     \includegraphics[height=4cm]{sweepfta.png}
-    \caption{Evaluation learning curves of DQN-FTA using different values of tiling bounds: $u \in \{0.1, 1, 10, 50, 100\}, l = -u$, with different number of tiles $k \in \{16, 64, 128\}$. The results are averaged over 10 runs.}
+    \caption{Evaluation learning curves of DQN-FTA using different values of tiling bounds: $u \in \{0.1, 1, 10, 50, 100\}, l = -u$, 
+    with different number of tiles $k \in \{16, 64, 128\}$. The results are averaged over 10 runs.}
     \label{fig:sweepfta}
 \end{figure}
 
@@ -323,9 +333,9 @@ This explanation explains why the green line ($u=1$) when $k=16$ is approximatel
 \end{figure}
 
 We found FTA sensitive to the tiling bound ($u$), hence only when choosing the the right value of $u$ we observed that it outperforms both DQN and DQN-Large.
-We found that the best value $u=1$ for DQN-FTA without a target network was $u=1$
+We found that the best value $u=1$ for DQN-FTA without a target network was $u=1$.
 Figure \ref{fig:bestfta} shows a plot of the above described DQN-FTA network compared to the untuned DQN-FTA ($u=20$) and DQN using ReLU activation instead of FTA.
-The clearly indicates that when the value of $u$ is set appropriately, DQN-FTA can outperform DQN with ReLU activation.
+This clearly indicates that when the value of $u$ is set appropriately, DQN-FTA can outperform DQN with ReLU activation.
 
 
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
@@ -376,7 +386,7 @@ We use Range Normalization to scale the inputs to FTA, to the range of -1 and 1.
  Similar to $tanh$, the reason for using Range Normalization is to ensure the range of inputs to FTA is between -1 and 1.
 
 To test these hypothesis, we run experiments with $tanh$, Batch Norm and Range Norm as the layer preceding FTA on Lunar Lander.
-One, with the best performing FTA tiling bounds and two, with the worst performing FTA tiling bounds.
+One, with the best performing FTA tiling bound ($u = 1$) and two, with the worst performing FTA tiling bounds ($u = 0.01, 100$).
 All other parameters and configurations are kept the same as those in section \ref{sub-sec:reproduc experiments}.
 
 \begin{figure}[h]
@@ -390,16 +400,16 @@ Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to D
 
 
 \subsubsection{Cartpole}
-To test the effectiveness of the tanh normalizing technique across environements we also performed experiments on the CartPole environment from OpenAI Gym \cite{brockman2016gym}.
+To test the effectiveness of the $tanh$ normalizing technique across environements we also performed experiments on the CartPole environment from OpenAI Gym \cite{brockman2016gym}.
 The CartPole environment begins with a pole balanced on top of a cart, and the goal is keep the pole balanced via moving the cart left or right.
 The state space of the CartPole environment contains four values: cart position. cart velocity, pole angle, pole angular velocity. 
 The action space is: push cart left, and push cart right.
-Since the goal is to keep the pole from falling a reward of $1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
+Since the goal is to keep the pole from falling a reward of $+1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
 
 \begin{figure}[h]
     \centering
     \includegraphics[width=10cm]{cartpole.png}
-    \caption{DQN-FTA without target network vs DQN-FTA-tanh in CartPole}
+    \caption{Evaluation learning curves plotting episodic return versus environment time steps for DQN-FTA without a target network (Left) and $tanh$ + DQN-FTA without a target network (Right).}
     \label{fig:cartpole}
 \end{figure}
 
@@ -407,16 +417,21 @@ Since the goal is to keep the pole from falling a reward of $1$ is recieved for 
 We first tested to see how DQN-FTA without a target network performs with three different tiling bounds ($u=0.01, 1, 100$) and $k=20$.
 The results can seen on the left plot in Figure \ref{fig:cartpole}. 
 Unlike in LunarLander, a tiling bound of $u=100$ performs best, while $u=1$ performs worse.
+Importantly, this highlights the sensitivity of FTA to the tiling bound parameter in the CartPole environment as well as LunarLander.
 
 We next tested to see if applying $tanh$ normalization before the FTA layer can improve the performance of $u=0.01, 1$ to be similar to that of $u=100$.
 The right plot in Figure \ref{fig:cartpole} illustrates that indeed, applying $tanh$ normaliztion caused for DQN-FTA to perform similar for all the tiling bounds we tested ($u=0.01, 1, 100$).
 % Further, we noticed that the performance with $tanh$ for all the tiling bounds is even better than it was without it for $u=100$.
 % This might indicate that the optimal tiling bound is not $u=100$ and $tanh$ was able to apply the appropriate normalization to find it.
-Thus, the experimental results in the CartPole environment further confirm that using $tanh$ normalization before an FTA layer can indeed remove the need for tuning the tiling bound $u$.
+Thus, the experimental results in the CartPole environment further confirm that using $tanh$ normalization before an FTA layer can potentially remove the need for tuning the tiling bound $u$.
 
 
 \subsection{Distribution of Returns} \label{sub-sec:distribution}
-We observed that DQN-FTA had noticeably different returns at 500k steps between seeds, wherein some seeds performed significantly better than others. To better understand agent performance with respect to initialization stochasticity, we investigate the distribution of mean episodic returns for ReLU, FTA, and FTA-TANH over various time steps. Additionally, standard error confidence intervals and averaging over runs in evaluation learning curves assumes that mean episodic returns are uni-modal and normally distributed; Violating these assumptions would misrepresent the robustness of the agent and the average return to which it converges. A bimodal distribution of average episodic returns at the final stage of learning (ie: 500k steps) would indicate that an agent is sensitive to weight initialization or environmental stochasticity, and therefore has inconsistent learning and unreliable behavior. 
+We observed that DQN-FTA had noticeably different returns at 500k steps between seeds, wherein some seeds performed significantly better than others. 
+To better understand agent performance with respect to initialization stochasticity, we investigate the distribution of mean episodic returns for ReLU, FTA, and FTA-$\tanh$ over various time steps. 
+Additionally, student's t confidence intervals and averaging over runs in evaluation learning curves assumes that mean episodic returns are uni-modal and normally distributed; 
+Violating these assumptions would misrepresent the robustness of the agent and the average return to which it converges. 
+A bimodal distribution of average episodic returns at the final stage of learning (ie: 500k steps) would indicate that an agent is sensitive to weight initialization or environmental stochasticity, and therefore has inconsistent learning and unreliable behavior. 
 
 \begin{figure}[h]
     \centering
@@ -431,17 +446,40 @@ Figure \ref{fig:dist} shows the distribution of mean episodic returns for DQN, (
 
 \section{Discussion} \label{sec:discussion}
 In this paper, we investigate the properties of FTA through empirical experimentation as an extension to the original FTA paper by \cite[]{pan2019fuzzy}.
-We first reproduced the learning curve evaluation for DQN-FTA, DQN, and DQN-Large in LunarLander, and found similar trends. When comparing the untuned FTA agent ($u = 20$) against the tuned ReLU agents, we found that FTA and DQN-Large reached higher average returns by $5\times10^5$ time steps than \cite{pan2019fuzzy}. It is currently unknown as to why our FTA and DQN-Large implementations perform better than the original paper. There are many potential reasons: stochasticity in our runs and initialization, our specific seeds used to evaluate performance, or even the implementation framework (we used PyTorch while \cite{pan2019fuzzy} used TensorFlow) could all influence the empirical outcome of experiments. While we only average over 10 runs compared to the 20 performed in the original paper, this should not have contributed to the performance discrepancy given our low standard error between runs. We will contact the original author to address any implementation differences, but further investigation into the plausible causes and further experimentation are required.
+We first reproduced the learning curve evaluation for DQN-FTA, DQN, and DQN-Large in LunarLander, and found similar trends. When comparing the untuned FTA agent ($u = 20$) against the tuned ReLU agents, we found that FTA and DQN-Large reached higher average returns by $5\times10^5$ time steps than \cite{pan2019fuzzy}. 
+It is currently unknown as to why our FTA and DQN-Large implementations perform better than the original paper. 
+There are many potential reasons: stochasticity in our runs and initialization, our specific seeds used to evaluate performance, or even the implementation framework (we used PyTorch while \cite{pan2019fuzzy} used TensorFlow) could all influence the empirical outcome of experiments. 
+While we only average over 10 runs compared to the 20 performed in the original paper, this should not have contributed to the performance discrepancy given our relatively tight confidence intervals between runs. 
+% We will contact the original author to address any implementation differences, but further investigation into the plausible causes and further experimentation are required.
+Further investigation into the plausible causes may be useful; however, we believe that since the same trends between networks were observed it is sufficient to claim we were able to reproduce the LunarLander experiments from \cite[]{pan2019fuzzy}.
 
-Our second experiment reproduces the bound sensitivity experiment comparing FTA with different tiling bounds, but also across different numbers of tiles. Our results share the conclusion that moderately small values for $u$ ($u \in {0.1, 1}$) perform better than the extremes ($u \in {0.01, 10, 50, 100}$) \cite[]{pan2019fuzzy}. We also find that increasing the number of tiles improves the performance of larger tiling bounds ($u \in {50, 100}$) while an extremely small $u$ gets worse ($u = 0.01$). This is expected, as increasing the number of tiles given a large tiling bound reduces $\delta$, thereby reducing interference between bins. In addition, increasing the number of tiles given an extremely small tiling bound greatly increases $delta$ and results in high interference between bins.
+Our second experiment reproduces the bound sensitivity experiment comparing FTA with different tiling bounds, but also across different numbers of tiles. 
+Our results share the conclusion that moderately small values for $u$ ($u \in {0.1, 1}$) perform better than the extremes ($u \in {0.01, 10, 50, 100}$) \cite[]{pan2019fuzzy}. 
+We also found that increasing the number of tiles improves the performance of larger tiling bounds ($u \in {50, 100}$) while an extremely small $u$ gets worse ($u = 0.01$). 
+This is expected, as increasing the number of tiles given a large tiling bound reduces $\delta$, thereby reducing interference between bins. 
+In addition, increasing the number of tiles given an extremely small tiling bound greatly increases $delta$ and results in high interference between bins.
 
-While \cite{pan2019fuzzy} addressed the \textit{out-of-boundary} and \textit{gradient vanishing} problem when $z \notin [l,u]$, we address the over-generalization problem due to incorrect bounds wherein the majority of $z \in [l,u]$ aggregate into a small range of the available bins. For example, if the inputs to FTA are $z = x^\top w \in [-1,1]$ while the range $[l,u] = [-20,20]$ and $\delta = \eta = 2$ such that number of bins $k=20$ and $c=(l, l+\delta, l+2\delta, ..., u-2\delta, u-\delta, u) = (-20, -18, -16, ..., 16, 18, 20)$ (like the LunarLander experiment in section \ref{sub-sec:reproduc experiments}), then $FTA(z)$ will only bin $z$ into two bins, between the ranges [-2,0] and [0,2]. When the $[l,u]$ bounds extend beyond the standard input to activation range, the sparsity provided by FTA is limited due to the number of unused bins. To address the bound selection problem, we perform normalizing experiments using range normalization, $tanh$ activation, and batch normalization. We found that $tanh$ normalization is bound-agnostic and improves the performance of FTA without requiring additional tuning for the environment [************NEED RESULTS SECTION TO REFLECT THIS. TANH + OTHERS, TANH WITH DIFFERENT BOUNDS, AND FTA + TANH IN CARTPOLE************]. In section \ref{sub-sec:normalize experiments}, we show that $tanh$-normalized FTA performs the same regardless of the tiling bound $[l,u]$ given a fixed number of bin $k$. When comparing against the agents in the LunarLander experiments, $tanh$-normalized DQN-FTA performs as well as a tuned FTA and better than all the other agents near the end of learning. $tanh$-normalized DQN-FTA also performs better than untuned FTA in Cartpole, extending the robustness $tanh$ normalization within other environments where the input range for $z \in [l,u]$ is unknown and agents are untuned. 
+While \cite{pan2019fuzzy} addressed the \textit{out-of-boundary} and \textit{gradient vanishing} problem when $z \notin [l,u]$, we address the over-generalization problem due to incorrect bounds wherein the majority of $z \in [l,u]$ aggregate into a small range of the available bins. 
+For example, if the inputs to FTA are $z = x^\top w \in [-1,1]$ while the range $[l,u] = [-20,20]$ and $\delta = \eta = 2$ such that number of bins $k=20$ and $c=(l, l+\delta, l+2\delta, ..., u-2\delta, u-\delta, u) = (-20, -18, -16, ..., 16, 18, 20)$ (like the LunarLander experiment in section \ref{sub-sec:reproduc experiments}), then $FTA(z)$ will only bin $z$ into two bins, between the ranges [-2,0] and [0,2]. 
+When the $[l,u]$ bounds extend beyond the standard input to activation range, the sparsity provided by FTA is limited due to the number of unused bins. 
+To address the bound selection problem, we perform normalizing experiments using range normalization, $tanh$ activation, and batch normalization. 
+We found that $tanh$ normalization is bound-agnostic and improves the performance of FTA without requiring additional tuning for the environment. 
+% [************NEED RESULTS SECTION TO REFLECT THIS. TANH + OTHERS, TANH WITH DIFFERENT BOUNDS, AND FTA + TANH IN CARTPOLE************]. 
+In section \ref{sub-sec:normalize experiments}, we show that $tanh$-normalized FTA performs the same regardless of the tiling bound $[l,u]$ given a fixed number of bin $k$. 
+When comparing against the agents in the LunarLander experiments, $tanh$-normalized DQN-FTA performs as well as a tuned FTA and better than all the other agents near the end of learning. 
+$tanh$-normalized DQN-FTA also performs better than untuned FTA in Cartpole, extending the robustness $tanh$ normalization within other environments where the input range for $z \in [l,u]$ is unknown and agents are untuned. 
 
-Lastly, we evaluate the distribution of mean episodic returns for DQN, (untuned) DQN-FTA, and DQN-FTA with tanh normalization in LunarLander. We find that near the end of learning, DQN and DQN-FTA have more bi-modal distributions whereas DQN-FTA with $tanh$ normalization is more uni-modal. This potentially demonstrates that tanh-normalized FTA improves agent stability to randomness in the initialization of network weights and environment settings compared to agents using ReLU or untuned FTA. Untuned DQN-FTA’s bi-modally distributed returns could also potentially explain the poor performance in LunarLander reported by \cite{pan2019fuzzy}. Although our distribution experiments are preliminary, and that hypothesis testing with significantly more sample runs is required to more conclusively address distribution normality and modality, figure \ref{fig:dist} illustrates how inconsistent the returns can be for an untuned FTA agent. Furthermore, our results emphasize the sensitivity of FTA tiling bounds $[l,u]$ and the importance of a bound-agnostic solution to FTA for its reliability and widespread adoption.
+Lastly, we evaluate the distribution of mean episodic returns for DQN, (untuned) DQN-FTA, and DQN-FTA with tanh normalization in LunarLander. 
+We find that near the end of learning, DQN and DQN-FTA have more bi-modal distributions whereas DQN-FTA with $tanh$ normalization is more uni-modal. 
+This potentially demonstrates that tanh-normalized FTA improves agent stability to randomness in the initialization of network weights and environment settings compared to agents using ReLU or untuned FTA. 
+Untuned DQN-FTA’s bi-modally distributed returns could also potentially explain the poor performance in LunarLander reported by \cite{pan2019fuzzy}. 
+Although our distribution experiments are preliminary, and that hypothesis testing with significantly more sample runs is required to more conclusively address distribution normality and modality, figure \ref{fig:dist} illustrates how inconsistent the returns can be for an untuned FTA agent. 
+Furthermore, our results emphasize the sensitivity of FTA tiling bounds $[l,u]$ and the importance of a bound-agnostic solution to FTA for its reliability and widespread adoption.
 
 Comparing against the agents in the LunarLander experiments of section \ref{sub-sec:reproduc experiments}, $tanh$-normalized DQN-FTA performs as well as a tuned FTA and better than all the other agents near the end of learning.
-
-We need more runs within cartpole and more to evaluate FTA distributions in other envs, (more thorough robustness evaluation)
+The experiments performed in the CartPole environment indicate a similar conclusion. 
+Evaluating the robustness of $tanh$-normalized DQN-FTA across more environments is left as a useful future work.
+% and more to evaluate FTA distributions in other envs, (more thorough robustness evaluation)
 
 
 \newpage

@@ -372,10 +372,35 @@ Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic 
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=3cm]{example-image-a}
+    \includegraphics[width=12cm]{normalizing.png}
     \caption{Evaluation learning curves plotting episodic return versus environment time steps for Batch Norm and $tanh$ as layers preceding FTA.}
     \label{fig:bnvtanh}
 \end{figure}
+
+\subsubsection{Cartpole}
+To test the effectiveness of the tanh normalizing technique across environements we also performed experiments on the CartPole environment from OpenAI Gym \cite{brockman2016gym}.
+The CartPole environment begins with a pole balanced on top of a cart, and the goal is keep the pole balanced via moving the cart left or right.
+The state space of the CartPole environment contains four values: cart position. cart velocity, pole angle, pole angular velocity. 
+The action space is: push cart left, and push cart right.
+Since the goal is to keep the pole from falling a reward of $1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{distribution.png}
+    \caption{DQN-FTA without target network vs DQN-FTA-tanh}
+    \label{fig:cartpole}
+\end{figure}
+
+We first tested to see how DQN-FTA without a target network performs with three different tiling bounds ($u=0.01, 1, 100$) and $k=20$.
+The results can seen on the left plot in Figure \ref{fig:cartpole}. 
+Unlike in LunarLander, a tiling bound of $u=100$ performs best, while $u=1$ performs worse.
+
+We next tested to see if applying $tanh$ normalization before the FTA layer can improve the performance of $u=0.01, 1$ to be similar to that of $u=100$.
+The right plot in Figure \ref{fig:cartpole} illustrates that indeed, applying $tanh$ normaliztion caused for DQN-FTA to perform similar for all the tiling bounds we tested ($u=0.01, 1, 100$).
+Further, we noticed that the performance with $tanh$ for all the tiling bounds is even better than it was without it for $u=100$.
+This might indicate that the optimal tiling bound is not $u=100$ and $tanh$ was able to apply the appropriate normalization to find it.
+Thus, the experimental results in the CartPole environment further confirm that using $tanh$ normalization before an FTA layer can indeed remove the need for tuning the tiling bound $u$.
+
 
 \subsection{Distribution of Returns} \label{sub-sec:distribution}
 We observed that DQN-FTA had noticeably different returns at 500k steps between seeds, wherein some seeds performed significantly better than others. To better understand agent performance with respect to initialization stochasticity, we investigate the distribution of mean episodic returns for ReLU, FTA, and FTA-TANH over various time steps. Additionally, standard error confidence intervals and averaging over runs in evaluation learning curves assumes that mean episodic returns are uni-modal and normally distributed; Violating these assumptions would misrepresent the robustness of the agent and the average return to which it converges. A bimodal distribution of average episodic returns at the final stage of learning (ie: 500k steps) would indicate that an agent is sensitive to weight initialization or environmental stochasticity, and therefore has inconsistent learning and unreliable behavior. 
@@ -388,6 +413,7 @@ We observed that DQN-FTA had noticeably different returns at 500k steps between 
 \end{figure}
 
 Figure \ref{fig:dist} shows the distribution of mean episodic returns for DQN, DQN-FTA, and DQN-FTA-$tanh$. DQN and DQN-FTA has the same parameters as in \ref{sub-sec:reproduc experiments}, and DQN-FTA-$tanh$ has the same parameters as in \ref{sub-sec:normalize experiments}. The FTA agents have the same number of bins, $k=20$, with DQN-FTA-$tanh$ differing from DQN-FTA by a $tanh$ activation layer before the FTA layer. While 50 runs per agent is relatively small to assess normality and modality of these distributions, we can observe that there is bi-modal character to DQN and DQN-FTA while DQN-FTA-$tanh$ appears more uni-modal and normally distributed.
+
 
 \section{Discussion} \label{sec:discussion}
 In this paper, we investigate the properties of FTA through empirical experimentation as an extension to the original FTA paper by \cite[]{pan2019fuzzy}.

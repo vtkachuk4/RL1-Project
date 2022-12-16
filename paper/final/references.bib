@@ -24,23 +24,10 @@
 }
 
 @article{brockman2016gym,
-  author    = {Greg Brockman and
-               Vicki Cheung and
-               Ludwig Pettersson and
-               Jonas Schneider and
-               John Schulman and
-               Jie Tang and
-               Wojciech Zaremba},
-  title     = {OpenAI Gym},
-  journal   = {CoRR},
-  volume    = {abs/1606.01540},
-  year      = {2016},
-  url       = {http://arxiv.org/abs/1606.01540},
-  eprinttype = {arXiv},
-  eprint    = {1606.01540},
-  timestamp = {Fri, 08 Nov 2019 12:51:06 +0100},
-  biburl    = {https://dblp.org/rec/journals/corr/BrockmanCPSSTZ16.bib},
-  bibsource = {dblp computer science bibliography, https://dblp.org}
+  title   = {Openai gym},
+  author  = {Brockman, Greg and Cheung, Vicki and Pettersson, Ludwig and Schneider, Jonas and Schulman, John and Tang, Jie and Zaremba, Wojciech},
+  journal = {arXiv preprint arXiv:1606.01540},
+  year    = {2016}
 }
 
 @inproceedings{ioffe2015batch,
@@ -52,26 +39,19 @@
   organization = {PMLR}
 }
 
-@inproceedings{bullinaria1995,
-  title  = {Representation , Learning , Generalization and Damage in Neural Network Models of Reading Aloud},
-  author = {John A. Bullinaria},
-  year   = {1995}
+@article{bullinaria1995,
+  title   = {Representation, learning, generalization and damage in neural network models of reading aloud},
+  author  = {Bullinaria, John A},
+  journal = {Submitted to Psychological Review},
+  year    = {1994}
 }
 
-@article{iCaRL2016,
-  author     = {Sylvestre{-}Alvise Rebuffi and
-                Alexander Kolesnikov and
-                Christoph H. Lampert},
-  title      = {iCaRL: Incremental Classifier and Representation Learning},
-  journal    = {CoRR},
-  volume     = {abs/1611.07725},
-  year       = {2016},
-  url        = {http://arxiv.org/abs/1611.07725},
-  eprinttype = {arXiv},
-  eprint     = {1611.07725},
-  timestamp  = {Fri, 20 Nov 2020 14:04:05 +0100},
-  biburl     = {https://dblp.org/rec/journals/corr/RebuffiKL16.bib},
-  bibsource  = {dblp computer science bibliography, https://dblp.org}
+@inproceedings{iCaRL2016,
+  title     = {icarl: Incremental classifier and representation learning},
+  author    = {Rebuffi, Sylvestre-Alvise and Kolesnikov, Alexander and Sperl, Georg and Lampert, Christoph H},
+  booktitle = {Proceedings of the IEEE conference on Computer Vision and Pattern Recognition},
+  pages     = {2001--2010},
+  year      = {2017}
 }
 
 @inproceedings{le2017,
@@ -81,43 +61,23 @@
                Artificial Intelligence, {IJCAI-17}},
   pages     = {2067--2073},
   year      = {2017},
-  doi       = {10.24963/ijcai.2017/287},
-  url       = {https://doi.org/10.24963/ijcai.2017/287}
+  doi       = {10.24963/ijcai.2017/287}
 }
 
-@article{liu2019,
-  author     = {Vincent Liu and
-                Raksha Kumaraswamy and
-                Lei Le and
-                Martha White},
-  title      = {The Utility of Sparse Representations for Control in Reinforcement
-                Learning},
-  journal    = {CoRR},
-  volume     = {abs/1811.06626},
-  year       = {2018},
-  url        = {http://arxiv.org/abs/1811.06626},
-  eprinttype = {arXiv},
-  eprint     = {1811.06626},
-  timestamp  = {Sun, 25 Nov 2018 18:57:12 +0100},
-  biburl     = {https://dblp.org/rec/journals/corr/abs-1811-06626.bib},
-  bibsource  = {dblp computer science bibliography, https://dblp.org}
+@inproceedings{liu2019,
+  title     = {The utility of sparse representations for control in reinforcement learning},
+  author    = {Liu, Vincent and Kumaraswamy, Raksha and Le, Lei and White, Martha},
+  booktitle = {Proceedings of the AAAI Conference on Artificial Intelligence},
+  volume    = {33},
+  pages     = {4384--4391},
+  year      = {2019}
 }
 
 @article{liu2020,
-  author     = {Vincent Liu and
-                Adam White and
-                Hengshuai Yao and
-                Martha White},
-  title      = {Towards a practical measure of interference for reinforcement learning},
-  journal    = {CoRR},
-  volume     = {abs/2007.03807},
-  year       = {2020},
-  url        = {https://arxiv.org/abs/2007.03807},
-  eprinttype = {arXiv},
-  eprint     = {2007.03807},
-  timestamp  = {Thu, 21 Apr 2022 11:57:24 +0200},
-  biburl     = {https://dblp.org/rec/journals/corr/abs-2007-03807.bib},
-  bibsource  = {dblp computer science bibliography, https://dblp.org}
+  title   = {Towards a practical measure of interference for reinforcement learning},
+  author  = {Liu, Vincent and White, Adam and Yao, Hengshuai and White, Martha},
+  journal = {arXiv preprint arXiv:2007.03807},
+  year    = {2020}
 }
 
 @inproceedings{bengio2020,
@@ -132,7 +92,6 @@
   month     = {13--18 Jul},
   publisher = {PMLR},
   pdf       = {http://proceedings.mlr.press/v119/bengio20a/bengio20a.pdf},
-  url       = {https://proceedings.mlr.press/v119/bengio20a.html},
   abstract  = {We study the link between generalization and interference in temporal-difference (TD) learning. Interference is defined as the inner product of two different gradients, representing their alignment; this quantity emerges as being of interest from a variety of observations about neural networks, parameter sharing and the dynamics of learning. We find that TD easily leads to low-interference, under-generalizing parameters, while the effect seems reversed in supervised learning. We hypothesize that the cause can be traced back to the interplay between the dynamics of interference and bootstrapping. This is supported empirically by several observations: the negative relationship between the generalization gap and interference in TD, the negative effect of bootstrapping on interference and the local coherence of targets, and the contrast between the propagation rate of information in TD(0) versus TD($\lambda$) and regression tasks such as Monte-Carlo policy evaluation. We hope that these new findings can guide the future discovery of better bootstrapping methods.}
 }
 
@@ -146,37 +105,20 @@
   pages   = {1-15},
   doi     = {10.1109/TNNLS.2022.3162241}
 }
+
 @article{ghiassian2020,
-  author     = {Sina Ghiassian and
-                Banafsheh Rafiee and
-                Yat Long Lo and
-                Adam White},
-  title      = {Improving Performance in Reinforcement Learning by Breaking Generalization
-                in Neural Networks},
-  journal    = {CoRR},
-  volume     = {abs/2003.07417},
-  year       = {2020},
-  url        = {https://arxiv.org/abs/2003.07417},
-  eprinttype = {arXiv},
-  eprint     = {2003.07417},
-  timestamp  = {Mon, 25 Apr 2022 11:12:20 +0200},
-  biburl     = {https://dblp.org/rec/journals/corr/abs-2003-07417.bib},
-  bibsource  = {dblp computer science bibliography, https://dblp.org}
+  title   = {Improving performance in reinforcement learning by breaking generalization in neural networks},
+  author  = {Ghiassian, Sina and Rafiee, Banafsheh and Lo, Yat Long and White, Adam},
+  journal = {arXiv preprint arXiv:2003.07417},
+  year    = {2020}
 }
 
 @article{javed2019,
-  author     = {Khurram Javed and
-                Martha White},
-  title      = {Meta-Learning Representations for Continual Learning},
-  journal    = {CoRR},
-  volume     = {abs/1905.12588},
-  year       = {2019},
-  url        = {http://arxiv.org/abs/1905.12588},
-  eprinttype = {arXiv},
-  eprint     = {1905.12588},
-  timestamp  = {Mon, 03 Jun 2019 13:42:33 +0200},
-  biburl     = {https://dblp.org/rec/journals/corr/abs-1905-12588.bib},
-  bibsource  = {dblp computer science bibliography, https://dblp.org}
+  title   = {Meta-learning representations for continual learning},
+  author  = {Javed, Khurram and White, Martha},
+  journal = {Advances in Neural Information Processing Systems},
+  volume  = {32},
+  year    = {2019}
 }
 
 @article{sutton2019,
@@ -203,17 +145,14 @@
 }
 
 @article{ddpg,
-  author  = {Lillicrap, Timothy and Hunt, Jonathan and Pritzel, Alexander and Heess, Nicolas and Erez, Tom and Tassa, Yuval and Silver, David and Wierstra, Daan},
-  year    = {2015},
-  month   = {09},
-  pages   = {},
   title   = {Continuous control with deep reinforcement learning},
-  journal = {CoRR}
+  author  = {Lillicrap, Timothy P and Hunt, Jonathan J and Pritzel, Alexander and Heess, Nicolas and Erez, Tom and Tassa, Yuval and Silver, David and Wierstra, Daan},
+  journal = {arXiv preprint arXiv:1509.02971},
+  year    = {2015}
 }
 
 @misc{nnrep,
   doi       = {10.48550/ARXIV.2203.15955},
-  url       = {https://arxiv.org/abs/2203.15955},
   author    = {Wang, Han and Miahi, Erfan and White, Martha and Machado, Marlos C. and Abbas, Zaheer and Kumaraswamy, Raksha and Liu, Vincent and White, Adam},
   keywords  = {Machine Learning (cs.LG), FOS: Computer and information sciences, FOS: Computer and information sciences},
   title     = {Investigating the Properties of Neural Network Representations in Reinforcement Learning},

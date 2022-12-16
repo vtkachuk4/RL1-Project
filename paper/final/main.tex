@@ -48,6 +48,7 @@
 \newcommand{\cS}{\mathcal{S}}
 \newcommand{\cA}{\mathcal{A}}
 \newcommand{\cM}{\mathcal{M}}
+\newcommand{\cB}{\mathcal{B}}
 \bibliographystyle{abbrvnat}
 
 
@@ -132,7 +133,7 @@ We revisit the example above with inputs $x_1$ and $x_2$.
 If the representation for $x_1$ is sparse, then the representation that is learned for $x_2$ can use weights that are unused for the representation of $x_1$,
 thus causing no interference between the representations for $x_1$ and $x_2$.
 The best way to enforce sparsity is an active topic of research.
-A detailed discussion of related works can be found in Section \ref{sec:background}.
+A detailed discussion of related work can be found in Section \ref{sub-sec:related work}.
 
 One way to enforce sparsity is by design, a method which does this is using a \textit{fuzzy tiling activation} (FTA) \cite[]{pan2019fuzzy}.
 FTA is an activation function that can be used at each layer of a NN, similar to ReLU or $\tanh$.
@@ -155,14 +156,14 @@ As such, in this work we aim to do two things:
 
 Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}.
 
-To answer the question in the second point we normalize the values passed into FTA using two methods: passing them into a $\tanh$, using batch norm.
+To answer the question in the second point we normalize the values passed into FTA using two methods: passing them into a $\tanh$, and using batch norm.
 The method of using $tanh$ to normalize the input values was discussed in \cite{pan2019fuzzy}, but not tested.
 \cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients, which we hope to confirm from this experiment.
 We hypothesis that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that then values passed into FTA are in $[-1, 1]$, thus the tiling bound can always be set to $[-1, 1]$.
 Experiments related to the second point are shown in section \ref{sub-sec:normalize experiments}.
 
 
-\section{Background} \label{sec:background}
+\subsection{Related Work} \label{sub-sec:related work}
 Representation learning can influence learning efficiency, positively through generalization but negatively through interference \cite[]{bullinaria1995, iCaRL2016, le2017, liu2019}.
 Learned representations using neural networks are especially vulnerable to interference due to aggressive generalization, as updates to one feature’s estimates change the estimates of later features in unexpected ways, degrading model accuracy.
 Interference in features learned by neural networks is even worse when trained on temporally correlated data \cite[]{liu2020, bengio2020, zhang2022}
@@ -192,7 +193,8 @@ A recent study by \cite{nnrep} on transferring learned representations to networ
 transferred better and more consistently than ReLU-based representations for less similar tasks.
 
 \section{Preliminaries} \label{sec:prelims}
-In this section we introduce the Fuzzy Tiling Activation (FTA) and formally define the RL setting.
+In this section we introduce the Fuzzy Tiling Activation (FTA) and the Rectified Linear Unit (ReLU) activation.
+Moreover, we formally define the RL setting and the Deep Q-learning (DQN) algorithm which we use for our experiments.
 
 \subsection{Fuzzy Tiling Activation}
 First we introduce the simpler \textit{tiling activation} (TA) and then extend it to the FTA.
@@ -223,7 +225,7 @@ Notice, that this means for $x < \eta$ the derivative is non-zero, allowing us t
 Also, when $\eta = 0$ the original indicator function $I_+$ can be recovered.
 
 \subsection{ReLU Activation}
-We will be comparing FTA to the rectified linear activation (ReLU) later
+We will be comparing FTA to the ReLU activation later.
 % , and will be using $\tanh$ to help improve the performance of FTA in Section 4.2.
 Thus we formally introduce it now.
 ReLU is defined as the positive part of its argument. Formally
@@ -254,18 +256,22 @@ $$Q^*(s, a) = \mathbf \max_{\pi} Q_\pi(s, a)$$
 In Q-Learning the action value function is iteratively updated by using the following (Bellman) equation to converge to the optimal action value function
 $$Q_{t+1}(s, a) = \mathbf{E}[R(s_t, a_t, s_{t+1}) + \gamma \max_{a_{t+1} \in \cA} Q_t(s_{t+1}, a_{t+1})|S_t =s, A_t=a, S_{t+1}=s_{t+1}]$$
 This converges to optimal action value function, $Q_t \rightarrow Q^*, t \rightarrow \infty$.
-A NN is used as a function approximator with weights $\theta$ to estimate an action value function, $Q(s, a; \theta)$
-The NN is trained by minimizing the following loss function at each time step $t$
-$$L_t(\theta_t) = \mathbf{E}_{s, a\sim \rho(.)}\big[(y_t - Q(s, a; \theta_t))^2\big],$$
-where $y_t = \mathbf{E}_{s^\prime\sim\varepsilon}[r + \gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1}) | s, a]$.
-The loss is computed by taking the expectation over the state-action pairs, $s, a$, that are sampled from the current $\mathit{behavior\ policy}$ $\rho(s, a)$.
-The expected value of the squared difference between the target value $y_i$ and the predicted action-value $Q(s, a; \theta_i)$ is then computed.
-The target value $y_i$ is a measure of the long-term rewards that can be obtained by taking a given action in a given state.
-It is computed by taking the expected value of the sum of the immediate reward $r$ and the discounted future rewards $\gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1})$, where $s^\prime$ is a future state that is obtained by taking action $a$ in state $s$, and $a^\prime$ is the action that maximizes the expected future rewards.
-The expectation is taken over the distribution of future states $s^\prime$ obtained by sampling from the environment with some probability $\varepsilon$.
+A NN is used as a function approximator with weights $\theta$ to estimate an action value function, $Q(s, a; \theta)$.
+The agent's experience ($s_{t-1}, a_{t-1}, s_t, R(s_{t-1}, a_{t-1}, s_t)$) at each timestep $t$ is stored into a $replay\ memory$.
+A minibatch $\cB_t$ of experiences is sampled randomly from the replay memory to calculate the loss function.
+% the neural network is trained by performing a gradient descent on the loss function.
 
-Agent's experience at each timestep is stored into a $replay\ memory$.
-A random minibatch of expriences are samepled randomly from this memory to calculate the loss function, and the neural network is trained by performing a gradient descent on the loss function.
+The NN is trained by minimizing the following loss function at each time step $t$ and then performing a gradient descent update
+% $$L_t(\theta_t) = \mathbf{E}_{s, a\sim \rho(.)}\big[(y_t - Q(s, a; \theta_t))^2\big],$$
+$$L_t(\theta_t) = \sum_{s, a, r, s' \in \cB_t}\big[r + \gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{t-1}) - Q(s, a; \theta_t)\big]^2.$$
+% where $y_t = \mathbf{E}_{s^\prime\sim\varepsilon}[r + \gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1}) | s, a]$.
+% The loss is computed by taking the expectation over the state-action pairs, $s, a$, that are sampled from the current $\mathit{behavior\ policy}$ $\rho(s, a)$.
+The agents behaviour policy is an $\epsilon$-greedy policy, which takes a random action with probability $\epsilon$ and is greedy with respect to $Q(s_t, \cdot; \theta_t)$ otherwise.
+% The expected value of the squared difference between the target value $y_i$ and the predicted action-value $Q(s, a; \theta_i)$ is then computed.
+% The target value $y_i$ is a measure of the long-term rewards that can be obtained by taking a given action in a given state.
+% It is computed by taking the expected value of the sum of the immediate reward $r$ and the discounted future rewards $\gamma \max_{a^\prime}Q(s^\prime, a^\prime; \theta_{i-1})$, where $s^\prime$ is a future state that is obtained by taking action $a$ in state $s$, and $a^\prime$ is the action that maximizes the expected future rewards.
+% The expectation is taken over the distribution of future states $s^\prime$ obtained by sampling from the environment with some probability $\varepsilon$.
+
 
 
 \section{Experiments} \label{sec:experiments}
@@ -323,6 +329,7 @@ We found that the best value $u=1$ for DQN-FTA without a target network was $u=1
 Figure \ref{fig:bestfta} shows a plot of the above described DQN-FTA network compared to the untuned DQN-FTA ($u=20$) and DQN using ReLU activation instead of FTA.
 The clearly indicates that when the value of $u$ is set appropriately, DQN-FTA can outperform DQN with ReLU activation.
 
+
 \subsection{Normalizing Experiment} \label{sub-sec:normalize experiments}
 % Explain how we plan to normalize the activation value going into FTA (i.e. $z = \tanh(X w)$).
 % I think we can leave this as TODO for final report.
@@ -333,13 +340,14 @@ It can be inferred intuitively, that for a small value of $u$, many inputs to FT
 On the other hand, for a large value of $u$, many inputs may activate the same tile.
 Both resulting in many dead neurons and increasing interference.
 This means there is a specific value of $u$ which would work best for any specific environment.
-Since its not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically.
+Since it is not straightforward to observe the range of outputs from a Neural Network layer, $u$ can not be set mathematically.
 It has to be tuned manually by sweeping over a range of values in multiple experiments, which increases the cost of a project.
 
 We hypothesize that if the inputs to FTA were scaled to a certain range, the performance would be less sensitive to the tiling bounds.
-We try two different methodologies to achieve this.
+We try three different methodologies to achieve this.
 First, using a Batch Normalization \cite[]{ioffe2015batch} layer before FTA.
 Second, using a $tanh$ activation layer before FTA.
+And finally, using a Range Normalization layer before FTA.
 
 Batch Normalization scales its input $x$ to a learned mean $\beta$ and variance $\gamma$.
 It is defined as
@@ -359,17 +367,55 @@ It is defined as
  \end{equation}
 The motivation behind using $tanh$ is to control the range of inputs to FTA, so that a standard tiling bound of $u = -l = 1$ would work in every case.
 
-To test these hypothesis, we run two experiments each with $tanh$ and Batch Norm as the layer preceding FTA on Lunar Lander.
+Range Normalization is used to scale the values to fall within a specific range.
+We use Range Normalization to scale the inputs to FTA, to the range of -1 and 1. It is defined as
+
+ \begin{equation}
+    y = \frac{x - x_{min}}{x_{max} - x_{min}} \cdot 2 - 1
+    \label{eq:rangnorm}
+ \end{equation}
+
+ Similar to $tanh$, the reason for using Range Normalization is to ensure the range of inputs to FTA is between -1 and 1.
+
+To test these hypothesis, we run experiments with $tanh$, Batch Norm and Range Norm as the layer preceding FTA on Lunar Lander.
 One, with the best performing FTA tiling bounds and two, with the worst performing FTA tiling bounds.
 All other parameters and configurations are kept the same as those in section \ref{sub-sec:reproduc experiments}.
-Figure \ref{fig:bnvtanh} shows the evaluation learning curves plotting episodic return versus environment time steps for all four of these experiments.
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=3cm]{example-image-a}
-    \caption{Evaluation learning curves plotting episodic return versus environment time steps for Batch Norm and $tanh$ as layers preceding FTA.}
+    \includegraphics[width=12cm]{normalizing.png}
+    \caption{Evaluation learning curves plotting episodic return versus environment time steps for Batch Norm, Range Norm and $tanh$ as layers preceding FTA, compared to DQN-FTA without a normalization layer preceding FTA.}
     \label{fig:bnvtanh}
 \end{figure}
+
+Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. We observe improvement over DQN-FTA with the worst tiling bounds, when $tanh$ is used as the preceding layer to FTA. On the other hand, Range Normalization performs poorly, and the performance gets worse with all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small.
+
+
+\subsubsection{Cartpole}
+To test the effectiveness of the tanh normalizing technique across environements we also performed experiments on the CartPole environment from OpenAI Gym \cite{brockman2016gym}.
+The CartPole environment begins with a pole balanced on top of a cart, and the goal is keep the pole balanced via moving the cart left or right.
+The state space of the CartPole environment contains four values: cart position. cart velocity, pole angle, pole angular velocity. 
+The action space is: push cart left, and push cart right.
+Since the goal is to keep the pole from falling a reward of $1$ is recieved for each step, and the episode terminates once the pole is at an angle greater than $\pm 12^\circ$.
+
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=10cm]{distribution.png}
+    \caption{DQN-FTA without target network vs DQN-FTA-tanh}
+    \label{fig:cartpole}
+\end{figure}
+
+
+We first tested to see how DQN-FTA without a target network performs with three different tiling bounds ($u=0.01, 1, 100$) and $k=20$.
+The results can seen on the left plot in Figure \ref{fig:cartpole}. 
+Unlike in LunarLander, a tiling bound of $u=100$ performs best, while $u=1$ performs worse.
+
+We next tested to see if applying $tanh$ normalization before the FTA layer can improve the performance of $u=0.01, 1$ to be similar to that of $u=100$.
+The right plot in Figure \ref{fig:cartpole} illustrates that indeed, applying $tanh$ normaliztion caused for DQN-FTA to perform similar for all the tiling bounds we tested ($u=0.01, 1, 100$).
+Further, we noticed that the performance with $tanh$ for all the tiling bounds is even better than it was without it for $u=100$.
+This might indicate that the optimal tiling bound is not $u=100$ and $tanh$ was able to apply the appropriate normalization to find it.
+Thus, the experimental results in the CartPole environment further confirm that using $tanh$ normalization before an FTA layer can indeed remove the need for tuning the tiling bound $u$.
+
 
 \subsection{Distribution of Returns} \label{sub-sec:distribution}
 We observed that DQN-FTA had noticeably different returns at 500k steps between seeds, wherein some seeds performed significantly better than others. To better understand agent performance with respect to initialization stochasticity, we investigate the distribution of mean episodic returns for ReLU, FTA, and FTA-TANH over various time steps. Additionally, standard error confidence intervals and averaging over runs in evaluation learning curves assumes that mean episodic returns are uni-modal and normally distributed; Violating these assumptions would misrepresent the robustness of the agent and the average return to which it converges. A bimodal distribution of average episodic returns at the final stage of learning (ie: 500k steps) would indicate that an agent is sensitive to weight initialization or environmental stochasticity, and therefore has inconsistent learning and unreliable behavior. 
@@ -382,6 +428,7 @@ We observed that DQN-FTA had noticeably different returns at 500k steps between 
 \end{figure}
 
 Figure \ref{fig:dist} shows the distribution of mean episodic returns for DQN, (untuned) DQN-FTA, and DQN-FTA-$tanh$. DQN and DQN-FTA has the same parameters as in \ref{sub-sec:reproduc experiments}, and DQN-FTA-$tanh$ has the same parameters as in \ref{sub-sec:normalize experiments}. The FTA agents have the same number of bins, $k=20$, with DQN-FTA-$tanh$ differing from DQN-FTA by a $tanh$ activation layer before the FTA layer. We can observe some general distribution characteristics and trends; For DQN and DQN-FTA, distributions of returns at the beginning of learning appear uni-modal and shift away from the mean of their distributions near the end of learning, while the distribution of returns for DQN-FTA-$tanh$ remain uni-modal and appear to converge towards the mean of its distribution. At 495k time steps, DQN and DQN-FTA distributions appear bi-modal while the DQN-FTA-$tanh$ distribution appears strongly uni-modal and more normally distributed. While 50-runs sample size per agent is relatively small hypothesis testing, our preliminary results in LunarLander show that 1) DQN and DQN-FTA distributions of returns may violate the normality and uni-modality assumptions near the end of training, an important observation on performance stability under stochasticity in the environment and weight initializations, and 2) DQN-FTA-tanh appears to maintain those assumptions throughout learning, illustrating that $tanh$ normalization can improve FTA stability.
+
 
 
 \section{Discussion} \label{sec:discussion}

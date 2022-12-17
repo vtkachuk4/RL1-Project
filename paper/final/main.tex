@@ -123,7 +123,7 @@ The values of all the neurons are commonly called \textit{features}.
 Unfortunately, when the NN is trained online (data received sequentially), interference can occur between the representations that are learned \cite[]{chandak2019learning,caselles2018continual,madjiheurem2019representation}.
 Interference is loosely defined as when a newly learned representation affects the performance of the NN on previously seen data in a negative way (i.e. the old representation becomes worse due to the newly learned one).
 A potentially useful intuition for when interference can occur is when the representation for some input $x_1$ is dense (a large number of neurons are non-zero),
-since then, if another input $x_2$ is sufficiently different (uncorrelated) from $x_1$, its representation should likely be quite different.
+since then, if another input $x_2$ is sufficiently different (uncorrelated) from $x_1$, its representation should be quite different.
 However, for a different representation to be learned for $x_2$, the NN must update the weights that contribute to the representation of $x_1$, thus making the representation for $x_1$ worse to learn a better representation for $x_2$.
 
 A method that has been found to reduce interference, is to enforce sparse representations (a large number of neurons are approximately zero) \cite[]{liu2019,javed2019,rafati2019learning}.
@@ -149,16 +149,16 @@ The sensitivity to the tiling bound was especially prominent in the work of \cit
 As such, in this work we aim to do two things:
 \begin{enumerate}
   \item We aim to reproduce the FTA vs ReLU using DQN in LunarLander experiments presented in \cite[]{pan2019fuzzy}, to confirm that indeed FTA is sensitive to the tiling bound in this setting.
-  \item Next, we aim to test if the simple technique of normalizing the values (using $\tanh$, batch norm, or range norm) passed to FTA can remove the need for tuning the tiling bound parameter in FTA.
+  \item Next, we aim to test if the simple technique of normalizing the values (using $\tanh$, Batch Norm, or Range Norm) passed to FTA can remove the need for tuning the tiling bound parameter in FTA.
 \end{enumerate}
 
 Experiments related to the first point are shown in section \ref{sub-sec:reproduc experiments}, indicating that the experiments were reproducible and nearly identical results were obtained as in \cite[]{pan2019fuzzy}.
 
-To answer the question in the second point we normalize the values passed into FTA using three methods: passing them into $\tanh$, batch norm, or range norm (all to be defined in Section \ref{sub-sec:normalize experiments}).
+To answer the question in the second point we normalize the values passed into FTA using three methods: passing them into $\tanh$, Batch Norm, or Range Norm (all to be defined in Section \ref{sub-sec:normalize experiments}).
 The method of using $\tanh$ to normalize the input values was discussed in \cite{pan2019fuzzy}, but not tested.
 \cite{pan2019fuzzy} mentioned that using this method might suffer from vanishing gradients. However, we did not see any indications of this in our experiments and obtained very positive results for $\tanh$.
 We hypothesize that normalizing the values should solve the need to set tiling bounds using search, since normalizing will ensure that the values passed into FTA are in $[-1, 1]$, and thus the tiling bound can always be set to $[-1, 1]$.
-We found that $\tanh$ was most effective, while batch norm and range norm did not perform as well.
+We found that $\tanh$ was most effective, while Batch Norm and Range Norm did not perform as well.
 Experiments highlighting these results are shown in Section \ref{sub-sec:normalize experiments}.
 
 
@@ -393,8 +393,7 @@ All other parameters and configurations are kept the same as those in section \r
     \label{fig:bnvtanh}
 \end{figure}
 
-Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. We observe good performance with all the tiling bounds and significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$, when $\tanh$ is used as the preceding layer to FTA to normalize its inputs. On the other hand, Range Normalization performs poorly, and the performance gets worse with all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small. Overall, it is apparent that $\tanh$ normalization is effective, irrespective of the tiling bound in the LunarLander environment.
-Figure \ref{fig:bnvtanh} depicts the results of experiments comparing the performance of $tahn$, batch normalization and batch normalization as layers preceding FTA and DQN-FTA without normalization with the best and worst-performing tiling bounds in the LunarLander environment. The results show that using the $tanh$ function as a preceding layer to normalize the inputs of FTA leads to good performance with all tiling bounds and significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$. On the other hand, range normalization performs poorly, and its performance worsens with all the tiling bounds. While batch normalization improves the performance of DQN-FTA with the highest tiling bound, it performs poorly when the tiling bound is very small. Overall, it is clear that $tanh$ normalization is effective regardless of the tiling bound in the LunarLander environment.
+Figure \ref{fig:bnvtanh} depicts the results of these experiments in LunarLander, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. When $\tanh$ is used as the preceding layer to FTA to normalize its inputs, we observe good performance with all the tested tiling bounds and a significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$. Range Normalization performs poorly across all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small. Overall, it is clear that $tanh$ normalization is effective regardless of the tiling bound in the LunarLander environment.
 
 
 \subsubsection{Cartpole}
@@ -436,7 +435,7 @@ A bi-modal distribution of average episodic returns at the final stage of learni
     \caption{Histogram of mean episodic returns for {\textcolor{red} {\bf DQN(red)}}, {\bf DQN-FTA(black)}, and {\textcolor{cyan} {\bf DQN-FTA-$\tanh$(cyan)}} over time step learning progression in LunarLander. There are 50 runs per agent, with the mean episodic return values at each time step divided into 10 bins between the range [-350, 350]. All three agents do not use target networks.}
     \label{fig:dist}
 \end{figure}
-
+\newpage
 Figure \ref{fig:dist} shows the distribution of mean episodic returns for DQN, (untuned) DQN-FTA, and DQN-FTA-$\tanh$. DQN and DQN-FTA has the same parameters as in \ref{sub-sec:reproduc experiments}, and DQN-FTA-$\tanh$ has the same parameters as in \ref{sub-sec:normalize experiments}. The FTA agents have the same number of bins, $k=20$, with DQN-FTA-$\tanh$ differing from DQN-FTA by a $\tanh$ activation layer before the FTA layer. We can observe some general distribution characteristics and trends; For DQN and DQN-FTA, distributions of returns at the beginning of learning appear uni-modal and shift away from the mean of their distributions near the end of learning, while the distribution of returns for DQN-FTA-$\tanh$ remain uni-modal and appear to converge towards the mean of its distribution. At 495k time steps, DQN and DQN-FTA distributions appear bi-modal while the DQN-FTA-$\tanh$ distribution appears strongly uni-modal and more normally distributed. While 50-run sample sizes per agent is relatively small hypothesis testing, our preliminary results in LunarLander show that 1) DQN and DQN-FTA distributions of returns may violate the normality and uni-modality assumptions near the end of training, an important observation on performance stability under stochasticity in the environment and weight initializations, and 2) DQN-FTA-$\tanh$ appears to maintain those assumptions throughout learning, illustrating that $\tanh$ normalization can improve FTA stability.
 
 
@@ -459,7 +458,7 @@ In addition, increasing the number of tiles given an extremely small tiling boun
 While \cite{pan2019fuzzy} addressed the \textit{out-of-boundary} and \textit{gradient vanishing} problem when $z \notin [l,u]$, we address the over-generalization problem due to incorrect bounds wherein the majority of $z \in [l,u]$ aggregate into a small range of the available bins. 
 For example, if the inputs to FTA are $z = x^\top w \in [-1,1]$ while the range $[l,u] = [-20,20]$ and $\delta = \eta = 2$ such that number of bins $k=20$ and $c=(l, l+\delta, l+2\delta, ..., u-2\delta, u-\delta, u) = (-20, -18, -16, ..., 16, 18, 20)$ (like the LunarLander experiment in section \ref{sub-sec:reproduc experiments}), then $FTA(z)$ will only bin $z$ into two bins, between the ranges [-2,0) and [0,2). 
 When the $[l,u]$ bounds extend beyond the standard input to activation range, the sparsity provided by FTA is limited due to the number of unused bins. 
-To address the bound selection problem, we perform normalizing experiments using range normalization, $\tanh$ activation, and batch normalization. 
+To address the bound selection problem, we perform normalizing experiments using Range Normalization, $\tanh$ activation, and Batch Normalization. 
 We found that $\tanh$ normalization is bound-agnostic and improves the performance of FTA without requiring additional tuning for the environment. 
 % [************NEED RESULTS SECTION TO REFLECT THIS. TANH + OTHERS, TANH WITH DIFFERENT BOUNDS, AND FTA + TANH IN CARTPOLE************]. 
 In section \ref{sub-sec:normalize experiments}, we show that $\tanh$-normalized FTA performs the same regardless of the tiling bound $[l,u]$ given a fixed number of bins $k$. 

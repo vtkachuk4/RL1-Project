@@ -377,7 +377,7 @@ We use Range Normalization to scale the inputs to FTA, to the range of -1 and 1.
 
  \begin{equation}
     y = \frac{x - x_{min}}{x_{max} - x_{min}} \cdot 2 - 1
-    \label{eq:rangnorm}
+    \label{eq:rangenorm}
  \end{equation}
 
  Similar to $\tanh$, the reason for using Range Normalization is to ensure the range of inputs to FTA is between -1 and 1.
@@ -394,6 +394,7 @@ All other parameters and configurations are kept the same as those in section \r
 \end{figure}
 
 Figure \ref{fig:bnvtanh} depicts the results of these experiments, compared to DQN-FTA with the best FTA tiling bounds and the two worst-performing tiling bounds. We observe good performance with all the tiling bounds and significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$, when $\tanh$ is used as the preceding layer to FTA to normalize its inputs. On the other hand, Range Normalization performs poorly, and the performance gets worse with all the tiling bounds. While Batch Normalization improves the performance of DQN-FTA with the highest tiling bound, it performs very poorly when the tiling bound is very small. Overall, it is apparent that $\tanh$ normalization is effective, irrespective of the tiling bound in the LunarLander environment.
+Figure \ref{fig:bnvtanh} depicts the results of experiments comparing the performance of $tahn$, batch normalization and batch normalization as layers preceding FTA and DQN-FTA without normalization with the best and worst-performing tiling bounds in the LunarLander environment. The results show that using the $tanh$ function as a preceding layer to normalize the inputs of FTA leads to good performance with all tiling bounds and significant improvement over DQN-FTA with the worst tiling bounds $(u = 0.01, 100)$. On the other hand, range normalization performs poorly, and its performance worsens with all the tiling bounds. While batch normalization improves the performance of DQN-FTA with the highest tiling bound, it performs poorly when the tiling bound is very small. Overall, it is clear that $tanh$ normalization is effective regardless of the tiling bound in the LunarLander environment.
 
 
 \subsubsection{Cartpole}
